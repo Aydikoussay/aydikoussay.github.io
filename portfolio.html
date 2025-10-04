@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koussay Aydi - Cybersecurity Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="portfolio_styles.css">
+</head>
+<body>
+    <!-- Video Background -->
+    <video id="video-background" autoplay muted loop playsinline>
+        <source src="back.mp4" type="video/mp4">
+    </video>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="header-container">
+            <div class="logo">
+                <div class="image-container">
+                    <img src="images/koussay.jpg" alt="Koussay Aydi">
+                </div>
+                <h1>Aydi<span>Koussay</span></h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#accueil" class="nav-link">Accueil</a></li>
+                    <li><a href="#a-propos" class="nav-link">À Propos</a></li>
+                    <li><a href="#competences" class="nav-link">Compétences</a></li>
+                    <li><a href="#certifications" class="nav-link">Certifications</a></li>
+                    <li><a href="#projets" class="nav-link">Projets</a></li>
+                    <li><a href="#contact" class="nav-link">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Section Accueil (Hero) -->
+        <section id="accueil" class="hero">
+            <div class="hero-content">
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-dot red"></div>
+                        <div class="terminal-dot yellow"></div>
+                        <div class="terminal-dot green"></div>
+                        <span class="terminal-title">koussay@cybersec:~$</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="prompt">$</span> whoami
+                        </div>
+                        <div class="terminal-line">
+                            <span class="output">Koussay Aydi - Cybersecurity Engineering Student</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="prompt">$</span> cat skills.txt
+                        </div>
+                        <div class="terminal-line">
+                            <span class="output typewriter">Linux | Angular | .NET | Pentesting | Cloud Security</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="prompt">$</span> echo "Bienvenue dans mon système"
+                        </div>
+                        <div class="terminal-line">
+                            <span class="output welcome-text">Bienvenue dans mon système</span>
+                        </div>
+                        <div class="terminal-line cursor">
+                            <span class="prompt">$</span> <span class="blinking-cursor">_</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <a href="#a-propos" class="btn btn-primary">
+                        <i class="fas fa-terminal"></i> Explorer le système
+                    </a>
+                    <a href="#contact" class="btn btn-secondary">
+                        <i class="fas fa-envelope"></i> Établir une connexion
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section À Propos -->
+        <section id="a-propos" class="about">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-bracket">[</span>
+                    À Propos
+                    <span class="title-bracket">]</span>
+                </h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">about.json</span>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>{
+  "nom": "Koussay Aydi",
+  "role": "Cybersecurity Engineering Student",
+  "passion": "Sécurité informatique & Développement",
+  "objectif": "Protéger les systèmes numériques",
+  "specialites": [
+    "Ethical Hacking",
+    "Penetration Testing", 
+    "System Administration",
+    "Cloud Security",
+    "Web Development"
+  ],
+  "philosophie": "La sécurité n'est pas un produit, mais un processus"
+}</code></pre>
+                            </div>
+                        </div>
+                        <p class="about-description">
+                            Passionné par la cybersécurité et le développement, je me spécialise dans l'identification 
+                            et la correction des vulnérabilités des systèmes informatiques. Mon approche combine 
+                            une solide expertise technique avec une compréhension approfondie des enjeux de sécurité 
+                            dans un monde numérique en constante évolution.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Compétences -->
+        <section id="competences" class="skills">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-bracket">[</span>
+                    Compétences
+                    <span class="title-bracket">]</span>
+                </h2>
+                <div class="skills-grid">
+                    <div class="skill-category">
+                        <div class="skill-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3>Cybersécurité</h3>
+                        <ul class="skill-list">
+                            <li>Penetration Testing</li>
+                            <li>Ethical Hacking</li>
+                            <li>Vulnerability Assessment</li>
+                            <li>Security Auditing</li>
+                            <li>Incident Response</li>
+                        </ul>
+                    </div>
+                    <div class="skill-category">
+                        <div class="skill-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <h3>Administration Système</h3>
+                        <ul class="skill-list">
+                            <li>Linux (RHEL, Ubuntu)</li>
+                            <li>Windows Server</li>
+                            <li>Network Configuration</li>
+                            <li>Shell Scripting</li>
+                            <li>System Monitoring</li>
+                        </ul>
+                    </div>
+                    <div class="skill-category">
+                        <div class="skill-icon">
+                            <i class="fas fa-cloud"></i>
+                        </div>
+                        <h3>Cloud & DevOps</h3>
+                        <ul class="skill-list">
+                            <li>Oracle Cloud (OCI)</li>
+                            <li>AWS Basics</li>
+                            <li>Docker</li>
+                            <li>CI/CD Pipelines</li>
+                            <li>Infrastructure as Code</li>
+                        </ul>
+                    </div>
+                    <div class="skill-category">
+                        <div class="skill-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3>Développement</h3>
+                        <ul class="skill-list">
+                            <li>Python</li>
+                            <li>Angular</li>
+                            <li>.NET Framework</li>
+                            <li>HTML/CSS/JavaScript</li>
+                            <li>SQL</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Certifications -->
+        <section id="certifications" class="certifications">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-bracket">[</span>
+                    Certifications
+                    <span class="title-bracket">]</span>
+                </h2>
+                <div class="certifications-grid">
+                    <div class="certification-card">
+                        <div class="cert-header">
+                            <div class="cert-icon">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                            <h3>eJPTv2</h3>
+                        </div>
+                        <div class="cert-body">
+                            <p class="cert-description">
+                                eLearnSecurity Junior Penetration Tester v2 - Certification en test d'intrusion 
+                                couvrant les techniques d'exploitation et d'évaluation de la sécurité.
+                            </p>
+                            <div class="cert-details">
+                                <span class="cert-provider">INE Security</span>
+                                <span class="cert-status verified">Vérifié</span>
+                            </div>
+                        </div>
+                        <div class="cert-footer">
+                            <a href="https://certs.ine.com/7f70b201-28e1-48a6-bce2-d0e579ff2563#acc.jDpA1ckV" 
+                               target="_blank" class="cert-link">
+                                <i class="fas fa-external-link-alt"></i> Vérifier
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="certification-card">
+                        <div class="cert-header">
+                            <div class="cert-icon">
+                                <i class="fab fa-redhat"></i>
+                            </div>
+                            <h3>RHCSA</h3>
+                        </div>
+                        <div class="cert-body">
+                            <p class="cert-description">
+                                Red Hat Certified System Administrator - Certification en administration 
+                                système Linux Red Hat Enterprise.
+                            </p>
+                            <div class="cert-details">
+                                <span class="cert-provider">Red Hat</span>
+                                <span class="cert-status verified">Vérifié</span>
+                            </div>
+                        </div>
+                        <div class="cert-footer">
+                            <div class="cert-id">ID: 250-075-249</div>
+                        </div>
+                    </div>
+
+                    <div class="certification-card">
+                        <div class="cert-header">
+                            <div class="cert-icon">
+                                <i class="fas fa-cloud"></i>
+                            </div>
+                            <h3>OCI Foundations</h3>
+                        </div>
+                        <div class="cert-body">
+                            <p class="cert-description">
+                                Oracle Cloud Infrastructure Foundations - Certification couvrant les 
+                                concepts fondamentaux du cloud Oracle.
+                            </p>
+                            <div class="cert-details">
+                                <span class="cert-provider">Oracle</span>
+                                <span class="cert-status verified">Vérifié</span>
+                            </div>
+                        </div>
+                        <div class="cert-footer">
+                            <a href="https://catalog-education.oracle.com/ords/certview/sharebadge?id=2E9AD628961054528010A8D538E941701AE88CABD42169A6F3D6B549B327554A" 
+                               target="_blank" class="cert-link">
+                                <i class="fas fa-external-link-alt"></i> Vérifier
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="certification-card">
+                        <div class="cert-header">
+                            <div class="cert-icon">
+                                <i class="fab fa-python"></i>
+                            </div>
+                            <h3>Python Essential 1</h3>
+                        </div>
+                        <div class="cert-body">
+                            <p class="cert-description">
+                                Python Institute Essential Level 1 - Certification couvrant les 
+                                fondamentaux de la programmation Python.
+                            </p>
+                            <div class="cert-details">
+                                <span class="cert-provider">Python Institute</span>
+                                <span class="cert-status verified">Vérifié</span>
+                            </div>
+                        </div>
+                        <div class="cert-footer">
+                            <a href="https://www.credly.com/badges/b5c85a29-45fe-461e-8e56-d45f0059dc92" 
+                               target="_blank" class="cert-link">
+                                <i class="fas fa-external-link-alt"></i> Vérifier
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Projets -->
+        <section id="projets" class="projects">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-bracket">[</span>
+                    Projets
+                    <span class="title-bracket">]</span>
+                </h2>
+                <div class="projects-grid">
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>Portfolio Cybersécurité</h3>
+                            <div class="project-status">
+                                <span class="status-dot active"></span>
+                                <span>En cours</span>
+                            </div>
+                        </div>
+                        <div class="project-body">
+                            <p>Portfolio personnel avec design hacker, présentant mes compétences et certifications en cybersécurité.</p>
+                            <div class="project-tech">
+                                <span class="tech-tag">HTML5</span>
+                                <span class="tech-tag">CSS3</span>
+                                <span class="tech-tag">JavaScript</span>
+                                <span class="tech-tag">GitHub Pages</span>
+                            </div>
+                        </div>
+                        <div class="project-footer">
+                            <a href="#" class="project-link">
+                                <i class="fab fa-github"></i> Code
+                            </a>
+                            <a href="#" class="project-link">
+                                <i class="fas fa-external-link-alt"></i> Demo
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>Laboratoire de Pentesting</h3>
+                            <div class="project-status">
+                                <span class="status-dot planning"></span>
+                                <span>Planifié</span>
+                            </div>
+                        </div>
+                        <div class="project-body">
+                            <p>Environnement de laboratoire pour la pratique du pentesting avec machines virtuelles vulnérables.</p>
+                            <div class="project-tech">
+                                <span class="tech-tag">VirtualBox</span>
+                                <span class="tech-tag">Kali Linux</span>
+                                <span class="tech-tag">Metasploit</span>
+                                <span class="tech-tag">Nmap</span>
+                            </div>
+                        </div>
+                        <div class="project-footer">
+                            <a href="#" class="project-link disabled">
+                                <i class="fab fa-github"></i> Code
+                            </a>
+                            <a href="#" class="project-link disabled">
+                                <i class="fas fa-external-link-alt"></i> Demo
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>Scripts d'Automatisation</h3>
+                            <div class="project-status">
+                                <span class="status-dot planning"></span>
+                                <span>Planifié</span>
+                            </div>
+                        </div>
+                        <div class="project-body">
+                            <p>Collection de scripts Python pour l'automatisation des tâches de sécurité et d'administration système.</p>
+                            <div class="project-tech">
+                                <span class="tech-tag">Python</span>
+                                <span class="tech-tag">Bash</span>
+                                <span class="tech-tag">Linux</span>
+                                <span class="tech-tag">Automation</span>
+                            </div>
+                        </div>
+                        <div class="project-footer">
+                            <a href="#" class="project-link disabled">
+                                <i class="fab fa-github"></i> Code
+                            </a>
+                            <a href="#" class="project-link disabled">
+                                <i class="fas fa-external-link-alt"></i> Demo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Contact -->
+        <section id="contact" class="contact">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-bracket">[</span>
+                    Contact
+                    <span class="title-bracket">]</span>
+                </h2>
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <div class="terminal-contact">
+                            <div class="terminal-header">
+                                <div class="terminal-dot red"></div>
+                                <div class="terminal-dot yellow"></div>
+                                <div class="terminal-dot green"></div>
+                                <span class="terminal-title">contact.sh</span>
+                            </div>
+                            <div class="terminal-body">
+                                <div class="terminal-line">
+                                    <span class="prompt">$</span> cat contact_info.txt
+                                </div>
+                                <div class="terminal-line">
+                                    <span class="output">Email: koussay.aydi@example.com</span>
+                                </div>
+                                <div class="terminal-line">
+                                    <span class="output">LinkedIn: /in/koussay-aydi</span>
+                                </div>
+                                <div class="terminal-line">
+                                    <span class="output">GitHub: /Aydikoussay</span>
+                                </div>
+                                <div class="terminal-line">
+                                    <span class="output">Status: Available for opportunities</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="contact-form">
+                        <form id="contactForm">
+                            <div class="form-group">
+                                <label for="name">Nom</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="subject">Sujet</label>
+                                <input type="text" id="subject" name="subject" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="message">Message</label>
+                                <textarea id="message" name="message" rows="5" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Envoyer le message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="social-links">
+                    <a href="https://github.com/Aydikoussay" target="_blank" title="GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://linkedin.com/in/koussay-aydi" target="_blank" title="LinkedIn">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="mailto:koussay.aydi@example.com" title="Email">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+                <p>&copy; 2024 Koussay Aydi. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="portfolio_script.js"></script>
+</body>
+</html>
