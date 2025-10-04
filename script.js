@@ -389,14 +389,14 @@ document.head.appendChild(styleSheet);
 console.log(`
     ╔══════════════════════════════════════════════════════════════╗
     ║                                                              ║
-    ║   🚀 Bienvenue dans le portfolio de Koussay Aydi            ║
+    ║    Bienvenue dans le portfolio de Koussay Aydi               ║
     ║                                                              ║
-    ║   👨‍💻 Cybersecurity Engineering Student                       ║
+    ║   👨‍💻 Cybersecurity Engineering Student                      ║
     ║   🔐 Passionné par la sécurité informatique                 ║
     ║   🛡️  Ethical Hacker & Penetration Tester                   ║
     ║                                                              ║
-    ║   📧 Contact: koussay.aydi@example.com                       ║
-    ║   🔗 GitHub: github.com/Aydikoussay                         ║
+    ║   📧 Contact: koussayaydi2009@gmail.com                     ║
+    ║   🔗 GitHub: https://github.com/Aydikoussay                 ║
     ║                                                              ║
     ║   Merci de visiter mon portfolio! 🎯                        ║
     ║                                                              ║
