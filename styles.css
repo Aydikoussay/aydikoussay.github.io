@@ -511,7 +511,8 @@ section:nth-of-type(even) {
 /* Section Certifications */
 .certifications-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); */
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-lg);
 }
 
