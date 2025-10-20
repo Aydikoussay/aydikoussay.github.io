@@ -951,3 +951,37 @@ footer p {
 html {
     scroll-padding-top: 80px;
 }
+.tech-logos {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    animation: fadeIn 1.2s ease-in-out;
+}
+
+.tech-logos img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    filter: grayscale(80%);
+    transition: all 0.3s ease-in-out;
+}
+
+.tech-logos img:hover {
+    filter: grayscale(0%) drop-shadow(0 0 10px rgba(0, 255, 0, 0.5));
+    transform: scale(1.1);
+}
+
+/* Animation douce */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
