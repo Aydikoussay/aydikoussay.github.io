@@ -980,11 +980,14 @@ footer p {
     animation: fadeInUp 0.6s ease forwards;
 }
 
+/* Effet de défilement fluide pour les liens de navigation */
 html {
     scroll-padding-top: 80px;
 }
 
-
+/* Effet au survol pour les logos de technologies (si utilisés) */
+/* Le sélecteur .tech-logos img:hover n'est pas utilisé dans votre HTML fourni,
+   mais s'il l'était, il est correct. Je le laisse pour l'instant. */
 .tech-logos img:hover {
     filter: grayscale(0%) brightness(1.1) drop-shadow(0 0 6px rgba(0, 255, 0, 0.5));
     transform: scale(1.1);
