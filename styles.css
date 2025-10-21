@@ -990,7 +990,7 @@ html {
 
 /* Styles pour l'image des badges elle-même */
 .logo-container .logo {
-    width: 120px; /* Largeur moyenne désirée pour l'image du badge */
+    width: 90px; /* Largeur moyenne désirée pour l'image du badge */
     height: auto; /* Maintient le ratio d'aspect de l'image */
     max-width: 100%; /* S'assure que l'image ne dépasse pas la largeur du parent sur les petits écrans */
     display: block; /* Permet l'utilisation de margin: auto pour le centrage */
