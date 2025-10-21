@@ -980,14 +980,14 @@ html {
     }
 }
 
-.logo-container {
+.logos-container {
     padding: 10px; /* Un peu d'espace autour du badge */
     text-align: center; /* Centrer l'image horizontalement dans le conteneur */
     margin-bottom: var(--spacing-md); /* Espace sous le badge, ajustez si besoin */
 }
 
 /* Styles pour l'image des badges elle-même */
-.logo-container .logo {
+.logos-container .logos {
     width: 90px; /* Largeur moyenne désirée pour l'image du badge */
     height: auto; /* Maintient le ratio d'aspect de l'image */
     max-width: 100%; /* S'assure que l'image ne dépasse pas la largeur du parent sur les petits écrans */
@@ -998,7 +998,7 @@ html {
     transition: all 0.3s ease; /* Transition douce pour les effets au survol */
 }
 
-.logo-container .logo:hover {
+.logos-container .logos:hover {
     transform: scale(1.05); /* Zoom léger de 5% au survol */
     box-shadow: 0 0 25px rgba(0, 255, 157, 0.6); /* Lueur plus intense au survol */
 }
