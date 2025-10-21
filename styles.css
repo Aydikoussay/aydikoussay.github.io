@@ -961,49 +961,6 @@ html {
     scroll-padding-top: 80px;
 }
 
-/* Logos Section - Adjusted for placement below terminal */
-.tech-logos {
-    display: flex; /* Display logos in a row */
-    justify-content: center; /* Center the logos horizontally */
-    gap: var(--spacing-lg); /* Adjust gap as needed */
-    flex-wrap: wrap; /* Allow logos to wrap on smaller screens */
-    margin-top: var(--spacing-lg); /* Add some space above the logos */
-    animation: fadeIn 1.2s ease-in-out;
-    margin-left: 0; /* Ensure no left margin pushes it out of center */
-    margin-bottom: var(--spacing-lg); /* Add space below logos before buttons */
-}
-
-/* Style des logos
-.tech-logos img {
-    width: 65px;
-    height: 65px;
-    object-fit: contain;
-    filter: grayscale(80%) brightness(1.2);
-    transition: all 0.3s ease;
-    background: none;
-    border-radius: 8px;
-}
---------------------------    */
-.tech-logos img:nth-of-type(1) { /* (ejpt_logo.jpg) */
-    width: 65px; /* Example size for the first logo */
-    height: 65px;
-    padding: 8px; /* Slightly more padding if it needs to appear smaller within its box */
-}
-
-.tech-logos img:nth-of-type(2) { /*  (ewpt_logo.jpg) */
-    width: 45px; /* Example size for the second logo */
-    height: 45px;
-}
-
-.tech-logos img:nth-of-type(3) { /*  (ico_logo.jpg) */
-    width: 65px; /* Example size for the third logo */
-    height: 65px;
-}
-
-.tech-logos img:nth-of-type(4) { /*  (rhcsa_logo.png) */
-    width: 45px; /* Example size for the fourth logo */
-    height: 45px;
-}
 
 
 
