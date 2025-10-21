@@ -982,14 +982,58 @@ html {
     }
 }
 
-.logo-container {
-     padding: 10px;
-     text-align: center; 
+/* Styles pour la section Hero */
+.hero-content {
+    /* Gardez vos styles existants pour hero-content */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    gap: var(--spacing-lg);
 }
 
-.logo {
-    width: 65px;  
-    height: auto; 
-    max-width: 100%; 
-    display: block; 
+.logo-container {
+    padding: 10px;
+    text-align: center;
+    /* Ajoutez ou modifiez ces propriétés pour mieux contrôler le conteneur */
+    margin-bottom: var(--spacing-md); /* Espace sous les badges */
+}
+
+.logo-container .logo { /* Cibler spécifiquement l'image .logo DANS .logo-container */
+    width: 120px; /* Taille moyenne désirée pour l'image du badge */
+    height: auto; /* Maintenir le ratio d'aspect */
+    max-width: 100%; /* S'assurer qu'elle ne dépasse pas son conteneur parent */
+    display: block; /* S'assurer qu'elle est traitée comme un bloc pour le centrage */
+    margin: 0 auto; /* Centrer l'image dans son conteneur */
+    box-shadow: 0 0 15px rgba(0, 255, 157, 0.4); /* Un petit effet de lueur */
+    border-radius: var(--border-radius); /* Bords légèrement arrondis */
+    transition: all 0.3s ease; /* Transition douce pour les interactions */
+}
+
+.logo-container .logo:hover {
+    transform: scale(1.05); /* Zoom léger au survol */
+    box-shadow: 0 0 25px rgba(0, 255, 157, 0.6); /* Lueur plus intense au survol */
+}
+
+/* Assurez-vous que le sélecteur .logo générique n'interfère pas avec celui-ci si vous en avez un autre */
+/* Si vous avez un autre .logo (comme dans le header), vous voudrez peut-être le modifier aussi */
+/* Ou vous assurer que le sélecteur .logo-container .logo est plus spécifique */
+
+/* Gardez les autres styles .logo qui ne sont PAS dans .logo-container intacts */
+.logo { /* Ceci fait référence au logo du header */
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.image-container { /* Ceci fait référence à l'image koussay.jpg dans le header */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--primary-green);
+    box-shadow: var(--shadow-sm);
 }
