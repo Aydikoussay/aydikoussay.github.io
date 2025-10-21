@@ -208,8 +208,15 @@ nav ul {
 }
 
 .hero-content {
-    max-width: 800px;
+    /* Adjusted for vertical stacking */
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center items horizontally */
+    justify-content: center; /* Center items vertically if there's extra space */
+    max-width: 800px; /* Keep terminal max-width for content */
     width: 100%;
+    margin: 0 auto; /* Center the whole hero-content block */
+    gap: var(--spacing-lg); /* Add space between terminal and logos */
 }
 
 /* Terminal */
@@ -217,10 +224,12 @@ nav ul {
     background: var(--bg-terminal);
     border-radius: var(--border-radius);
     padding: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg); /* Maintain space below terminal */
     box-shadow: var(--shadow-glow);
     border: 1px solid rgba(0, 255, 157, 0.3);
     text-align: left;
+    flex: none; /* Prevent terminal from growing unnecessarily */
+    min-width: 300px; /* Ensure terminal doesn't shrink too much */
 }
 
 .terminal-header {
@@ -307,6 +316,7 @@ nav ul {
     gap: var(--spacing-md);
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: var(--spacing-lg); /* Add space between logos and buttons */
 }
 
 .btn {
@@ -511,8 +521,7 @@ section:nth-of-type(even) {
 /* Section Certifications */
 .certifications-grid {
     display: grid;
-    /* grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); */
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjusted for better responsiveness */
     gap: var(--spacing-lg);
 }
 
@@ -951,49 +960,17 @@ footer p {
 html {
     scroll-padding-top: 80px;
 }
+
+/* Logos Section - Adjusted for placement below terminal */
 .tech-logos {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
+    display: flex; /* Display logos in a row */
+    justify-content: center; /* Center the logos horizontally */
+    gap: var(--spacing-lg); /* Adjust gap as needed */
+    flex-wrap: wrap; /* Allow logos to wrap on smaller screens */
+    margin-top: var(--spacing-lg); /* Add some space above the logos */
     animation: fadeIn 1.2s ease-in-out;
-}
-
-.tech-logos img {
-    width: 60px;
-    height: 60px;
-    object-fit: contain;
-    filter: grayscale(80%);
-    transition: all 0.3s ease-in-out;
-}
-
-.tech-logos img:hover {
-    filter: grayscale(0%) drop-shadow(0 0 10px rgba(0, 255, 0, 0.5));
-    transform: scale(1.1);
-}
-
-.hero-content {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-}
-
-.terminal {
-    flex: 1;
-    min-width: 300px;
-}
-
-/* Logos alignés à droite */
-.tech-logos {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 15px;
-    margin-left: 30px;
-    animation: fadeIn 1s ease-in-out;
+    margin-left: 0; /* Ensure no left margin pushes it out of center */
+    margin-bottom: var(--spacing-lg); /* Add space below logos before buttons */
 }
 
 /* Style des logos */
@@ -1003,7 +980,7 @@ html {
     object-fit: contain;
     filter: grayscale(80%) brightness(1.2);
     transition: all 0.3s ease;
-    background: none; /* enlève tout fond ajouté par erreur */
+    background: none;
     border-radius: 8px;
 }
 
@@ -1017,11 +994,10 @@ html {
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateX(20px);
+        transform: translateY(20px); /* Changed from translateX to translateY for vertical flow */
     }
     to {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateY(0);
     }
 }
-
