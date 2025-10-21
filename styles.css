@@ -981,3 +981,15 @@ html {
         transform: translateY(0);
     }
 }
+
+.logo-container {
+     padding: 10px; */
+     text-align: center; 
+}
+
+.logo {
+    width: 65px;  
+    height: auto; 
+    max-width: 100%; 
+    display: block; 
+}
