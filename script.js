@@ -1,29 +1,25 @@
 // Portfolio JavaScript - Interactions et animations
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialisation
     initNavigation();
     initScrollEffects();
     initTypewriterEffect();
     initContactForm();
     initMobileMenu();
     initAnimations();
+    initVideoParallax();
 });
 
 // Navigation fluide
 function initNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');
-    
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const targetId = this.getAttribute('href');
             const targetSection = document.querySelector(targetId);
-            
             if (targetSection) {
                 const headerHeight = document.querySelector('#header').offsetHeight;
-                const targetPosition = targetSection.offsetTop - headerHeight;
-                
+                const targetPosition = targetSection.offsetTop - headerHeight - 20;
                 window.scrollTo({
                     top: targetPosition,
                     behavior: 'smooth'
@@ -36,12 +32,8 @@ function initNavigation() {
 // Effets de défilement
 function initScrollEffects() {
     const header = document.querySelector('#header');
-    let lastScrollTop = 0;
-    
     window.addEventListener('scroll', function() {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Header background opacity
+        const scrollTop = window.pageYOffset;
         if (scrollTop > 50) {
             header.style.background = 'rgba(10, 10, 10, 0.98)';
             header.style.boxShadow = '0 2px 20px rgba(0, 255, 157, 0.3)';
@@ -49,358 +41,184 @@ function initScrollEffects() {
             header.style.background = 'rgba(10, 10, 10, 0.95)';
             header.style.boxShadow = '0 2px 10px rgba(0, 255, 157, 0.2)';
         }
-        
-        // Active navigation link
         updateActiveNavLink();
-        
-        lastScrollTop = scrollTop;
     });
 }
 
-// Mise à jour du lien de navigation actif
+// Mise à jour du lien actif
 function updateActiveNavLink() {
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('.nav-link');
     const headerHeight = document.querySelector('#header').offsetHeight;
-    
-    let currentSection = '';
-    
+
+    let current = '';
     sections.forEach(section => {
         const sectionTop = section.offsetTop - headerHeight - 100;
         const sectionHeight = section.offsetHeight;
-        
         if (window.pageYOffset >= sectionTop && window.pageYOffset < sectionTop + sectionHeight) {
-            currentSection = section.getAttribute('id');
+            current = section.getAttribute('id');
         }
     });
-    
+
     navLinks.forEach(link => {
         link.classList.remove('active');
-        if (link.getAttribute('href') === `#${currentSection}`) {
+        if (link.getAttribute('href') === `#${current}`) {
             link.classList.add('active');
         }
     });
 }
 
-// Effet machine à écrire
+// Typewriter
 function initTypewriterEffect() {
-    const typewriterElements = document.querySelectorAll('.typewriter');
-    
-    typewriterElements.forEach(element => {
-        const text = element.textContent;
-        element.textContent = '';
-        element.style.borderRight = '2px solid var(--primary-green)';
-        
+    const elements = document.querySelectorAll('.typewriter');
+    elements.forEach(el => {
+        const text = el.textContent;
+        el.textContent = '';
         let i = 0;
-        const typeInterval = setInterval(() => {
+        const type = () => {
             if (i < text.length) {
-                element.textContent += text.charAt(i);
+                el.textContent += text.charAt(i);
                 i++;
+                setTimeout(type, 80);
             } else {
-                clearInterval(typeInterval);
-                // Garder le curseur clignotant
-                setTimeout(() => {
-                    element.style.borderRight = 'none';
-                }, 1000);
+                el.style.borderRight = 'none';
             }
-        }, 100);
+        };
+        setTimeout(type, 500);
     });
 }
 
-// Formulaire de contact
+// Formulaire
 function initContactForm() {
-    const contactForm = document.getElementById('contactForm');
-    
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Récupération des données du formulaire
-            const formData = new FormData(this);
-            const name = formData.get('name');
-            const email = formData.get('email');
-            const subject = formData.get('subject');
-            const message = formData.get('message');
-            
-            // Validation simple
-            if (!name || !email || !subject || !message) {
-                showNotification('Veuillez remplir tous les champs.', 'error');
-                return;
-            }
-            
-            if (!isValidEmail(email)) {
-                showNotification('Veuillez entrer une adresse email valide.', 'error');
-                return;
-            }
-            
-            // Simulation d'envoi (remplacer par une vraie implémentation)
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
-            submitButton.disabled = true;
-            
-            setTimeout(() => {
-                showNotification('Message envoyé avec succès!', 'success');
-                contactForm.reset();
-                submitButton.innerHTML = originalText;
-                submitButton.disabled = false;
-            }, 2000);
-        });
-    }
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('button');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            showNotification('Message envoyé avec succès !', 'success');
+            form.reset();
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }, 1800);
+    });
 }
 
-// Validation email
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// Système de notifications
+// Notifications
 function showNotification(message, type = 'info') {
-    // Supprimer les notifications existantes
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(notification => notification.remove());
-    
-    // Créer la nouvelle notification
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+
+    const notif = document.createElement('div');
+    notif.className = `notification notification-${type}`;
+    notif.innerHTML = `
         <div class="notification-content">
-            <i class="fas ${getNotificationIcon(type)}"></i>
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
             <span>${message}</span>
         </div>
-        <button class="notification-close">
-            <i class="fas fa-times"></i>
-        </button>
+        <button class="notification-close"><i class="fas fa-times"></i></button>
     `;
-    
-    // Styles de la notification
-    notification.style.cssText = `
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        background: ${getNotificationColor(type)};
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        min-width: 300px;
-        animation: slideInRight 0.3s ease;
+    notif.style.cssText = `
+        position: fixed; top: 100px; right: 20px; background: ${type === 'success' ? 'linear-gradient(135deg, #00ff9d, #00a8ff)' : 'linear-gradient(135deg, #ff3860, #ff6b9d)'};
+        color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000;
+        display: flex; align-items: center; gap: 1rem; min-width: 300px; animation: slideInRight 0.3s ease;
     `;
-    
-    document.body.appendChild(notification);
-    
-    // Fermeture automatique
+    document.body.appendChild(notif);
+
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 5000);
-    
-    // Fermeture manuelle
-    notification.querySelector('.notification-close').addEventListener('click', () => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    });
-}
+        notif.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notif.remove(), 300);
+    }, 4000);
 
-function getNotificationIcon(type) {
-    switch (type) {
-        case 'success': return 'fa-check-circle';
-        case 'error': return 'fa-exclamation-circle';
-        case 'warning': return 'fa-exclamation-triangle';
-        default: return 'fa-info-circle';
-    }
-}
-
-function getNotificationColor(type) {
-    switch (type) {
-        case 'success': return 'linear-gradient(135deg, #00ff9d, #00a8ff)';
-        case 'error': return 'linear-gradient(135deg, #ff3860, #ff6b9d)';
-        case 'warning': return 'linear-gradient(135deg, #ffdd57, #ffa726)';
-        default: return 'linear-gradient(135deg, #00a8ff, #9c27b0)';
-    }
+    notif.querySelector('.notification-close').onclick = () => {
+        notif.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notif.remove(), 300);
+    };
 }
 
 // Menu mobile
 function initMobileMenu() {
-    const mobileToggle = document.querySelector('.mobile-menu-toggle');
+    const toggle = document.querySelector('.mobile-menu-toggle');
     const nav = document.querySelector('nav ul');
-    
-    if (mobileToggle && nav) {
-        mobileToggle.addEventListener('click', function() {
-            nav.classList.toggle('mobile-active');
-            this.classList.toggle('active');
-        });
-        
-        // Fermer le menu lors du clic sur un lien
-        const navLinks = nav.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                nav.classList.remove('mobile-active');
-                mobileToggle.classList.remove('active');
-            });
-        });
-    }
-}
+    if (!toggle || !nav) return;
 
-// Animations d'entrée
-function initAnimations() {
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.animation = 'fadeInUp 0.6s ease forwards';
-                observer.unobserve(entry.target);
-            }
+    toggle.addEventListener('click', () => {
+        document.body.classList.toggle('mobile-menu-open');
+    });
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            document.body.classList.remove('mobile-menu-open');
         });
-    }, observerOptions);
-    
-    // Observer les éléments à animer
-    const animatedElements = document.querySelectorAll(
-        '.skill-category, .certification-card, .project-card, .about-content, .contact-content'
-    );
-    
-    animatedElements.forEach(element => {
-        element.style.opacity = '0';
-        element.style.transform = 'translateY(30px)';
-        observer.observe(element);
     });
 }
 
-// Effet de parallaxe léger pour le fond vidéo
-window.addEventListener('scroll', function() {
-    const scrolled = window.pageYOffset;
-    const videoBackground = document.getElementById('video-background');
-    
-    if (videoBackground) {
-        const rate = scrolled * -0.5;
-        videoBackground.style.transform = `translateY(${rate}px)`;
-    }
-});
+// Animations
+function initAnimations() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
 
-// Gestion des liens externes
-document.addEventListener('click', function(e) {
-    if (e.target.matches('a[href^="http"]') || e.target.closest('a[href^="http"]')) {
-        const link = e.target.matches('a') ? e.target : e.target.closest('a');
-        if (link.hostname !== window.location.hostname) {
-            e.preventDefault();
-            window.open(link.href, '_blank', 'noopener,noreferrer');
-        }
-    }
-});
+    document.querySelectorAll('.skill-category, .certification-card, .project-card, .about-content, .contact-content').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'all 0.6s ease';
+        observer.observe(el);
+    });
+}
 
-// Ajout des styles CSS pour les animations
-const animationStyles = `
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-    
-    .nav-link.active {
-        color: var(--primary-green) !important;
-    }
-    
-    .nav-link.active::after {
-        width: 100% !important;
-    }
-    
-    .mobile-menu-toggle.active span:nth-child(1) {
-        transform: rotate(45deg) translate(5px, 5px);
-    }
-    
-    .mobile-menu-toggle.active span:nth-child(2) {
-        opacity: 0;
-    }
-    
-    .mobile-menu-toggle.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(7px, -6px);
-    }
-    
+// Parallaxe vidéo
+function initVideoParallax() {
+    const video = document.getElementById('video-background');
+    if (!video) return;
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        video.style.transform = `translateY(${scrolled * -0.4}px)`;
+    });
+}
+
+// Styles injectés
+const styles = `
+    @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+    .nav-link.active { color: var(--primary-green) !important; }
+    .nav-link.active::after { width: 100% !important; }
+    .mobile-menu-toggle span { transition: all 0.3s ease; }
+    .mobile-menu-open .mobile-menu-toggle span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .mobile-menu-open .mobile-menu-toggle span:nth-child(2) { opacity: 0; }
+    .mobile-menu-open .mobile-menu-toggle span:nth-child(3) { transform: rotate(-45deg) translate(7px, -6px); }
     @media (max-width: 768px) {
-        nav ul.mobile-active {
-            display: flex !important;
-            flex-direction: column;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(10, 10, 10, 0.98);
-            backdrop-filter: blur(10px);
-            padding: 1rem;
-            border-top: 1px solid rgba(0, 255, 157, 0.2);
-            gap: 1rem;
+        nav ul { display: none; }
+        .mobile-menu-open nav ul {
+            display: flex !important; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0;
+            background: rgba(10,10,10,0.98); backdrop-filter: blur(10px); padding: 1rem; gap: 1rem;
+            border-top: 1px solid rgba(0,255,157,0.2);
         }
     }
-    
-    .notification-content {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .notification-close {
-        background: none;
-        border: none;
-        color: white;
-        cursor: pointer;
-        padding: 0.25rem;
-        border-radius: 4px;
-        transition: background 0.3s ease;
-    }
-    
-    .notification-close:hover {
-        background: rgba(255, 255, 255, 0.2);
-    }
+    .notification-close { background: none; border: none; color: white; cursor: pointer; }
+    .notification-close:hover { background: rgba(255,255,255,0.2); border-radius: 4px; }
 `;
-
-// Injection des styles
 const styleSheet = document.createElement('style');
-styleSheet.textContent = animationStyles;
+styleSheet.textContent = styles;
 document.head.appendChild(styleSheet);
 
-// Console easter egg
+// Easter egg console
 console.log(`
-    ╔══════════════════════════════════════════════════════════════╗
-    ║                                                              ║
-    ║    Bienvenue dans le portfolio de Koussay Aydi               ║
-    ║                                                              ║
-    ║   👨‍💻 Cybersecurity Engineering Student                      ║
-    ║   🔐 Passionné par la sécurité informatique                 ║
-    ║   🛡️  Ethical Hacker & Penetration Tester                   ║
-    ║                                                              ║
-    ║   📧 Contact: koussayaydi2009@gmail.com                     ║
-    ║   🔗 GitHub: https://github.com/Aydikoussay                 ║
-    ║                                                              ║
-    ║   Merci de visiter mon portfolio! 🎯                        ║
-    ║                                                              ║
-    ╚══════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════╗
+║ Bienvenue dans le portfolio de Koussay Aydi                 ║
+║ Cybersecurity Engineering Student | Ethical Hacker          ║
+║ Contact: koussayaydi2009@gmail.com                          ║
+╚══════════════════════════════════════════════════════════════╝
 `);
-
-console.log('%c🔒 Security Note: Ce portfolio a été développé avec les meilleures pratiques de sécurité web.', 'color: #00ff9d; font-weight: bold;');
+console.log('%cSecurity is not a product, but a process.', 'color: #00ff9d; font-weight: bold;');
