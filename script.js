@@ -87,27 +87,35 @@ function initTypewriterEffect() {
     setTimeout(type, 600);
 }
 
-// Formulaire de contact
+// Formulaire de contact avec EmailJS
 function initContactForm() {
     const form = document.getElementById('contactForm');
     if (!form) return;
 
     form.addEventListener('submit', function (e) {
         e.preventDefault();
+
         const btn = this.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
         btn.disabled = true;
 
-        setTimeout(() => {
-            showNotification('Message envoyé avec succès !', 'success');
-            form.reset();
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }, 1800);
+        // Envoi via EmailJS
+        emailjs.sendForm('service_gmail', 'portfolio_contact', this)
+            .then(() => {
+                showNotification('Message sent successfully!', 'success');
+                form.reset();
+            })
+            .catch((error) => {
+                console.error('EmailJS error:', error);
+                showNotification('Failed to send message. Try again later.', 'error');
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
     });
 }
-
 // Notification toast
 function showNotification(message, type = 'info') {
     // Supprimer ancienne notification
