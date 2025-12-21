@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initVideoParallax();
     initExternalLinks();
     consoleEasterEgg();
+    initSecretAccess();
 });
 
 // Navigation fluide
@@ -35,7 +36,6 @@ function initScrollEffects() {
     const header = document.querySelector('#header');
     window.addEventListener('scroll', () => {
         const scrollY = window.pageYOffset;
-        // Header background
         if (scrollY > 50) {
             header.style.background = 'rgba(10, 10, 10, 0.98)';
             header.style.boxShadow = '0 2px 20px rgba(0, 255, 157, 0.3)';
@@ -87,7 +87,7 @@ function initTypewriterEffect() {
     setTimeout(type, 600);
 }
 
-// Formulaire de contact avec EmailJS
+// ✅ Nouvelle fonction : sauvegarde locale des messages
 function initContactForm() {
     const form = document.getElementById('contactForm');
     if (!form) return;
@@ -97,28 +97,33 @@ function initContactForm() {
 
         const btn = this.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         btn.disabled = true;
 
-        // Envoi via EmailJS
-        emailjs.sendForm('service_gmail', 'portfolio_contact', this)
-            .then(() => {
-                showNotification('Message sent successfully!', 'success');
-                form.reset();
-            })
-            .catch((error) => {
-                console.error('EmailJS error:', error);
-                showNotification('Failed to send message. Try again later.', 'error');
-            })
-            .finally(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
+        const formData = {
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            subject: document.getElementById('subject').value.trim(),
+            message: document.getElementById('message').value.trim(),
+            timestamp: new Date().toLocaleString('fr-FR')
+        };
+
+        let messages = JSON.parse(localStorage.getItem('koussay_contact_messages') || '[]');
+        messages.push(formData);
+        localStorage.setItem('koussay_contact_messages', JSON.stringify(messages));
+
+        showNotification('Message saved locally!', 'success');
+        form.reset();
+
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 1000);
     });
 }
+
 // Notification toast
 function showNotification(message, type = 'info') {
-    // Supprimer ancienne notification
     document.querySelectorAll('.notification').forEach(n => n.remove());
 
     const notif = document.createElement('div');
@@ -131,7 +136,6 @@ function showNotification(message, type = 'info') {
         <button class="notification-close"><i class="fas fa-times"></i></button>
     `;
 
-    // Style inline (compatible avec ton CSS)
     notif.style.cssText = `
         position: fixed; top: 100px; right: 20px; z-index: 10000;
         background: ${type === 'success' ? 'linear-gradient(135deg, #00ff9d, #00a8ff)' : 'linear-gradient(135deg, #ff3860, #ff6b9d)'};
@@ -141,13 +145,11 @@ function showNotification(message, type = 'info') {
 
     document.body.appendChild(notif);
 
-    // Auto-fermeture
     setTimeout(() => {
         notif.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => notif.remove(), 300);
     }, 4000);
 
-    // Bouton fermer
     notif.querySelector('.notification-close').onclick = () => {
         notif.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => notif.remove(), 300);
@@ -164,7 +166,6 @@ function initMobileMenu() {
         body.classList.toggle('mobile-menu-open');
     });
 
-    // Fermer au clic sur un lien
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', () => {
             body.classList.remove('mobile-menu-open');
@@ -225,13 +226,39 @@ function consoleEasterEgg() {
     ║     Ethical Hacker & Penetration Tester                     ║
     ║                                                              ║
     ║     Email: koussayaydi2009@gmail.com                        ║
-    ║     GitHub: https://github.com/Aydikoussay                  ║
+    ║     GitHub: https://github.com/Aydikoussay                    ║
     ║                                                              ║
     ║     Merci de visiter mon portfolio!                        ║
     ║                                                              ║
     ╚══════════════════════════════════════════════════════════════╝
     `);
     console.log('%cSecurity Note: Ce portfolio a été développé avec les meilleures pratiques de sécurité web.', 'color: #00ff9d; font-weight: bold; font-size: 14px;');
+}
+
+// 🔐 Fonction secrète pour voir les messages
+function initSecretAccess() {
+    window.viewMessages = function(password = '') {
+        const SECRET = 'cybersec2025'; // ← MODIFIE CE MOT DE PASSE
+        if (password === SECRET) {
+            const messages = JSON.parse(localStorage.getItem('koussay_contact_messages') || '[]');
+            if (messages.length === 0) {
+                console.log('%c🔒 Aucun message sauvegardé.', 'color: #ff9d00; font-weight: bold;');
+            } else {
+                console.log(`%c🔐 ${messages.length} message(s) sauvegardé(s) :`, 'color: #00ff9d; font-weight: bold;');
+                messages.forEach((msg, i) => {
+                    console.log(`\n--- Message #${i+1} (${msg.timestamp}) ---`);
+                    console.log(`Name: ${msg.name}`);
+                    console.log(`Email: ${msg.email}`);
+                    console.log(`Subject: ${msg.subject}`);
+                    console.log(`Message: ${msg.message}`);
+                });
+            }
+            return messages;
+        } else {
+            console.warn('🔒 Accès refusé. Utilise : viewMessages("cybersec2025")');
+            return null;
+        }
+    };
 }
 
 // Injection des animations CSS nécessaires
