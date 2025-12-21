@@ -87,41 +87,22 @@ function initTypewriterEffect() {
     setTimeout(type, 600);
 }
 
-// ✅ Nouvelle fonction : sauvegarde locale des messages
+// ✅ Nouvelle fonction : ouvrir un e-mail pré-rempli
 function initContactForm() {
-    const form = document.getElementById('contactForm');
-    if (!form) return;
+    const button = document.getElementById('emailButton');
+    if (!button) return;
 
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        btn.disabled = true;
-
-        const formData = {
-            name: document.getElementById('name').value.trim(),
-            email: document.getElementById('email').value.trim(),
-            subject: document.getElementById('subject').value.trim(),
-            message: document.getElementById('message').value.trim(),
-            timestamp: new Date().toLocaleString('fr-FR')
-        };
-
-        let messages = JSON.parse(localStorage.getItem('koussay_contact_messages') || '[]');
-        messages.push(formData);
-        localStorage.setItem('koussay_contact_messages', JSON.stringify(messages));
-
-        showNotification('Message saved locally!', 'success');
-        form.reset();
-
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }, 1000);
+    button.addEventListener('click', function () {
+        const email = 'koussayaydi2009@gmail.com';
+        const subject = encodeURIComponent('Portfolio Contact');
+        const body = encodeURIComponent(
+            'Hello Koussay,\n\n' +
+            'I found your portfolio interesting and would like to get in touch.\n\n' +
+            'Best regards,\n'
+        );
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     });
 }
-
 // Notification toast
 function showNotification(message, type = 'info') {
     document.querySelectorAll('.notification').forEach(n => n.remove());
