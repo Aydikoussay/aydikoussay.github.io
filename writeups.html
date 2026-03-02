@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writeups - Koussay Aydi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .writeups-page {
+            padding-top: 120px;
+            min-height: 100vh;
+        }
+        .back-home {
+            margin-bottom: 2rem;
+            display: inline-block;
+            color: var(--primary-green);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-home:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Video Background -->
+    <video id="video-background" autoplay muted loop playsinline>
+        <source src="back.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="header-container">
+            <div class="logo">
+                <div class="image-container">
+                    <img src="images/koussay.jpg" alt="Koussay Aydi">
+                </div>
+                <h1>Aydi<span>Koussay</span></h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html#accueil" class="nav-link">Home</a></li>
+                    <li><a href="index.html#a-propos" class="nav-link">About</a></li>
+                    <li><a href="index.html#competences" class="nav-link">Skills</a></li>
+                    <li><a href="index.html#certifications" class="nav-link">Certifications</a></li>
+                    <li><a href="index.html#projets" class="nav-link">Projects</a></li>
+                    <li><a href="index.html#writeups" class="nav-link">Writeups</a></li>
+                    <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="writeups-page">
+        <div class="container">
+            <a href="index.html" class="back-home"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            
+            <h2 class="section-title">
+                <span class="title-bracket">[</span> My Writeups <span class="title-bracket">]</span>
+            </h2>
+
+            <div class="writeups-grid">
+                <!-- Machine Writeup Template -->
+                <div class="writeup-card">
+                    <div class="writeup-header">
+                        <div class="writeup-icon"><i class="fab fa-medium"></i></div>
+                        <h3>Machine Name</h3>
+                    </div>
+                    <div class="writeup-body">
+                        <p>Description of the machine and the challenges faced during the exploitation process.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Linux</span>
+                            <span class="tech-tag">PrivEsc</span>
+                            <span class="tech-tag">Web</span>
+                        </div>
+                    </div>
+                    <div class="writeup-footer">
+                        <a href="#" target="_blank" class="writeup-link">
+                            <i class="fas fa-external-link-alt"></i> Read on Medium
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Add more cards here -->
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="social-links">
+                    <a href="https://github.com/Aydikoussay" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="https://www.linkedin.com/in/koussay-aydi-61a00b260/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    <a href="mailto:koussayaydi2009@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                </div>
+                <p>© 2025 Koussay Aydi. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
