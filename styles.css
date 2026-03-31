@@ -43,7 +43,20 @@ body {
     transition: var(--transition);
     line-height: 1.6;
 }
-
+/* ── Profile photo ── */
+.sidebar img,
+.profile-photo,
+img[src*="koussay"] {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;           /* makes it circular */
+  object-fit: cover;            /* crops without stretching */
+  object-position: center top;  /* keeps face in frame */
+  display: block;
+  margin: 0 auto 1rem;
+  border: 3px solid #00ff9f;    /* green hacker accent */
+  box-shadow: 0 0 0 5px rgba(0, 255, 159, 0.12);
+}
 /* ============================================
    CONTAINER & LAYOUT
    ============================================ */
@@ -56,14 +69,7 @@ body {
 /* ============================================
    SIDEBAR
    ============================================ */
-.image-container {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid var(--primary-green);
-    box-shadow: var(--shadow-sm);
-}
+
 .sidebar {
     width: 280px;
     background-color: var(--bg-white);
