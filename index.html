@@ -1,696 +1,409 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Koussay Aydi - Cybersecurity Portfolio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Video Background -->
-    <video id="video-background" autoplay muted loop playsinline>
-        <source src="back.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-
-    <!-- Header -->
-    <header id="header">
-        <div class="header-container">
-            <div class="logo">
-                <div class="image-container">
-                    <img src="images/koussay.jpg" alt="Koussay Aydi">
-                </div>
-                <h1>Aydi<span>Koussay</span></h1>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="#accueil" class="nav-link">Home</a></li>
-                    <li><a href="#a-propos" class="nav-link">About</a></li>
-                    <li><a href="#competences" class="nav-link">Skills</a></li>
-                    <li><a href="#certifications" class="nav-link">Certifications</a></li>
-                    <li><a href="#projets" class="nav-link">Projects</a></li>
-                    <li><a href="writeups.html" class="nav-link">Writeups</a></li>
-                    <li><a href="#contact" class="nav-link">Contact</a></li>
-                </ul>
-            </nav>
-            <div class="mobile-menu-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    </header>
-
-    <main>
-        <!-- Hero Section -->
-        <section id="accueil" class="hero">
-            <div class="hero-content">
-                <!-- Badges -->
-                <div class="tech-logos">
-                    <img src="https://img.shields.io/badge/Linux-FCC624?style=for-badge&logo=linux&logoColor=black" alt="Linux" class="tech-logo">
-                    <img src="https://img.shields.io/badge/Kali_Linux-557C94?style=for-badge&logo=kali-linux&logoColor=white" alt="Kali" class="tech-logo">
-                    <img src="https://img.shields.io/badge/Python-3776AB?style=for-badge&logo=python&logoColor=white" alt="Python" class="tech-logo">
-                    <img src="https://img.shields.io/badge/Angular-DD0031?style=for-badge&logo=angular&logoColor=white" alt="Angular" class="tech-logo">
-                    <img src="https://img.shields.io/badge/.NET-512BD4?style=for-badge&logo=dotnet&logoColor=white" alt=".NET" class="tech-logo">
-                </div>
-
-                <!-- Terminal -->
-                <div class="terminal">
-                    <div class="terminal-header">
-                        <div class="terminal-dot red"></div>
-                        <div class="terminal-dot yellow"></div>
-                        <div class="terminal-dot green"></div>
-                        <span class="terminal-title">koussay@cybersec:~$</span>
-                    </div>
-                    <div class="terminal-body">
-                        <div class="terminal-line">
-                            <span class="prompt">$</span> whoami
-                        </div>
-                        <div class="terminal-line">
-                            <span class="output">Koussay Aydi - Cybersecurity Engineering Student</span>
-                        </div>
-                        <div class="terminal-line">
-                            <span class="prompt">$</span> cat skills.txt
-                        </div>
-                        <div class="terminal-line">
-                            <span class="output typewriter"> Linux | Red Teaming | Active Directory | Pentesting </span>
-                        </div>
-                        <div class="terminal-line">
-                            <span class="prompt">$</span> echo "Welcome to my system"
-                        </div>
-                        <div class="terminal-line">
-                            <span class="output welcome-text">Welcome to my system</span>
-                        </div>
-                        <div class="terminal-line cursor">
-                            <span class="prompt">$</span> <span class="blinking-cursor">_</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Buttons -->
-                <div class="hero-actions">
-                    <a href="#a-propos" class="btn btn-primary">
-                        <i class="fas fa-terminal"></i> Explore the system
-                    </a>
-                    <a href="#contact" class="btn btn-secondary">
-                        <i class="fas fa-envelope"></i> Establish a connection
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- About -->
-        <section id="a-propos" class="about">
-            <div class="container">
-                <h2 class="section-title">
-                    <span class="title-bracket">[</span> About <span class="title-bracket">]</span>
-                </h2>
-                <div class="about-content">
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">about.json</span>
-                        </div>
-                        <div class="code-content">
-                            <pre><code>{
-  "name": "Koussay Aydi",
-  "role": "Cybersecurity Engineering Student",
-  "passion": "Cybersecurity & Development",
-  "goal": "Protect digital systems",
-  "specialties": [
-    "Ethical Hacking",
-    "Penetration Testing",
-    "System Administration",
-    "Red Teaming",
-    "Web Development"
-  ],
-  "philosophy": "Security is not a product, but a process"
-}</code></pre>
-                        </div>
-                    </div>
-                    <p class="about-description">
-                        Passionate about cybersecurity and development, I specialize in identifying
-                        and fixing vulnerabilities in computer systems. My approach combines
-                        strong technical expertise with a deep understanding of the security
-                        challenges in an ever-evolving digital world.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Skills -->
-        <section id="competences" class="skills">
-            <div class="container">
-                <h2 class="section-title">
-                    <span class="title-bracket">[</span> Skills <span class="title-bracket">]</span>
-                </h2>
-                <div class="skills-grid">
-                    <div class="skill-category">
-                        <div class="skill-icon"><i class="fas fa-shield-alt"></i></div>
-                        <h3>Cybersecurity</h3>
-                        <ul class="skill-list">
-                            <li>Penetration Testing</li>
-                            <li>Ethical Hacking</li>
-                            <li>Vulnerability Assessment</li>
-                            <li>Security Auditing</li>
-                            <li>Incident Response</li>
-                        </ul>
-                    </div>
-                    <div class="skill-category">
-                        <div class="skill-icon"><i class="fas fa-server"></i></div>
-                        <h3>System Administration</h3>
-                        <ul class="skill-list">
-                            <li>Linux (RHEL, Ubuntu)</li>
-                            <li>Windows Server</li>
-                            <li>Network Configuration</li>
-                            <li>Shell Scripting</li>
-                            <li>System Monitoring</li>
-                        </ul>
-                    </div>
-                    <div class="skill-category">
-                        <div class="skill-icon"><i class="fas fa-cloud"></i></div>
-                        <h3>Cloud & DevOps</h3>
-                        <ul class="skill-list">
-                            <li>Oracle Cloud (OCI)</li>
-                            <li>AWS Basics</li>
-                            <li>Docker</li>
-                            <li>CI/CD Pipelines</li>
-                            <li>Infrastructure as Code</li>
-                        </ul>
-                    </div>
-                    <div class="skill-category">
-                        <div class="skill-icon"><i class="fas fa-code"></i></div>
-                        <h3>Development</h3>
-                        <ul class="skill-list">
-                            <li>Python</li>
-                            <li>Angular</li>
-                            <li>.NET Framework</li>
-                            <li>HTML/CSS/JavaScript</li>
-                            <li>SQL</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-<!-- Certifications -->
-<section id="certifications" class="certifications">
     <div class="container">
-        <h2 class="section-title">
-            <span class="title-bracket">[</span> Certifications <span class="title-bracket">]</span>
-        </h2>
-        <div class="certifications-grid">
-
-
-  <!-- CRTO -->
-            <div class="certification-card">
-    <div class="cert-header">
-        <div class="cert-icon"><i class="fas fa-crosshairs"></i></div>
-        <h3>CRTO</h3>
-    </div>
-    <div class="cert-body">
-        <p class="cert-description">Certified Red Team Operator – Practical certification covering red team operations, C2 frameworks, Active Directory attacks, and evasion techniques in realistic adversary simulation scenarios.</p>
-        <div class="cert-details">
-            <span class="cert-provider">Zero Point Security</span>
-            <span class="cert-status verified">Verified</span>
-        </div>
-    </div>
-    <div class="cert-footer">
-        <a href="https://certs.zeropointsecurity.co.uk/ad853e66-f8cf-4ed9-a05f-7cfc392edd05" target="_blank" class="cert-link">
-            <i class="fas fa-external-link-alt"></i> Verify
-        </a>
-    </div>
-</div>
-            <!-- eJPTv2 -->
-            <div class="certification-card">
-                <div class="cert-header">
-                    <div class="cert-icon"><i class="fas fa-bug"></i></div>
-                    <h3>eJPTv2</h3>
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="avatar">KA</div>
+                    <h1>Koussay Aydi</h1>
                 </div>
-                <div class="cert-body">
-                    <p class="cert-description">eLearnSecurity Junior Penetration Tester v2 – Hands-on certification validating foundational penetration testing and network exploitation skills.</p>
-                    <div class="cert-details">
-                        <span class="cert-provider">INE Security</span>
-                        <span class="cert-status verified">Verified</span>
-                    </div>
-                </div>
-                <div class="cert-footer">
-                    <a href="https://certs.ine.com/7f70b201-28e1-48a6-bce2-d0e579ff2563#acc.jDpA1ckV" target="_blank" class="cert-link">
-                        <i class="fas fa-external-link-alt"></i> Verify
-                    </a>
-                </div>
-            </div>
-
-<!-- eCPTv3 -->
-<div class="certification-card">
-    <div class="cert-header">
-        <div class="cert-icon"><i class="fas fa-user-ninja"></i></div>
-        <h3>eCPPTv3</h3>
-    </div>
-    <div class="cert-body">
-        <p class="cert-description">eLearnSecurity Certified Professional Penetration Tester v3 – Advanced hands-on certification validating comprehensive penetration testing skills across network, system, and post-exploitation scenarios in realistic enterprise environments.</p>
-        <div class="cert-details">
-            <span class="cert-provider">INE Security</span>
-            <span class="cert-status verified">Verified</span>
-        </div>
-    </div>
-    <div class="cert-footer">
-        <a href="https://certs.ine.com/3f4e8d11-68d2-451d-835a-2287b1c4d971#acc.auXR5fd4" target="_blank" class="cert-link">
-            <i class="fas fa-external-link-alt"></i> Verify
-        </a>
-    </div>
-</div>
-
-
-
-
-
-
-            
-            <!-- eWPTv2 -->
-            <div class="certification-card">
-                <div class="cert-header">
-                    <div class="cert-icon"><i class="fas fa-globe"></i></div>
-                    <h3>eWPTv2</h3>
-                </div>
-                <div class="cert-body">
-                    <p class="cert-description">eLearnSecurity Web Application Penetration Tester v2 – Advanced certification focused on real-world web app exploitation and OWASP Top 10 vulnerabilities.</p>
-                    <div class="cert-details">
-                        <span class="cert-provider">INE Security</span>
-                        <span class="cert-status verified">Verified</span>
-                    </div>
-                </div>
-                <div class="cert-footer">
-                    <a href="https://certs.ine.com/075fc983-afa9-4bfb-b664-ef43dd5d10e2#acc.ViFOpqoW" target="_blank" class="cert-link">
-                        <i class="fas fa-external-link-alt"></i> Verify
-                    </a>
-                </div>
-            </div>
-
-            <!-- CRTP -->
-            <div class="certification-card">
-                <div class="cert-header">
-                    <div class="cert-icon"><i class="fas fa-user-secret"></i></div>
-                    <h3>CRTP</h3>
-                </div>
-                <div class="cert-body">
-                    <p class="cert-description">Certified Red Team Professional – Practical certification in Active Directory attack paths, Kerberoasting, DCSync, and post-exploitation by Altered Security.</p>
-                    <div class="cert-details">
-                        <span class="cert-provider">Altered Security</span>
-                        <span class="cert-status verified">Verified</span>
-                    </div>
-                </div>
-                <div class="cert-footer">
-                    <div class="cert-id">ID: ADLID13808</div>
-                    <a href="https://www.credential.net/bcc360c1-64d9-477c-aba4-25adda1a5f89#acc.1YLEis5O" target="_blank" class="cert-link">
-                        <i class="fas fa-external-link-alt"></i> Verify
-                    </a>
-                </div>
-            </div>
-
-            <!-- RHCSA -->
-            <div class="certification-card">
-                <div class="cert-header">
-                    <div class="cert-icon"><i class="fab fa-redhat"></i></div>
-                    <h3>RHCSA</h3>
-                </div>
-                <div class="cert-body">
-                    <p class="cert-description">Red Hat Certified System Administrator – Validates core system administration skills on Red Hat Enterprise Linux (RHEL).</p>
-                    <div class="cert-details">
-                        <span class="cert-provider">Red Hat</span>
-                        <span class="cert-status verified">Verified</span>
-                    </div>
-                </div>
-                <div class="cert-footer">
-                    <div class="cert-id">ID: 250-075-249</div>
-                </div>
-            </div>
-
-            <!-- RHCE -->
-            <div class="certification-card">
-                <div class="cert-header">
-                    <div class="cert-icon"><i class="fab fa-redhat"></i></div>
-                    <h3>RHCE</h3>
-                </div>
-                <div class="cert-body">
-                    <p class="cert-description">Red Hat Certified Engineer – Advanced certification focused on automation with Ansible and enterprise-level Linux system management.</p>
-                    <div class="cert-details">
-                        <span class="cert-provider">Red Hat</span>
-                        <span class="cert-status verified">Verified</span>
-                    </div>
-                </div>
-                <div class="cert-footer">
-                    <div class="cert-id">ID: 250-075-249</div>
-                </div>
-            </div>
-
-            <!-- OCI Foundations -->
-            <div class="certification-card">
-                <div class="cert-header">
-                    <div class="cert-icon"><i class="fas fa-cloud"></i></div>
-                    <h3>OCI Foundations</h3>
-                </div>
-                <div class="cert-body">
-                    <p class="cert-description">Oracle Cloud Infrastructure Foundations – Official certification covering core cloud concepts, compute, networking, and security in OCI.</p>
-                    <div class="cert-details">
-                        <span class="cert-provider">Oracle</span>
-                        <span class="cert-status verified">Verified</span>
-                    </div>
-                </div>
-                <div class="cert-footer">
-                    <a href="https://catalog-education.oracle.com/ords/certview/sharebadge?id=2E9AD628961054528010A8D538E941701AE88CABD42169A6F3D6B549B327554A" target="_blank" class="cert-link">
-                        <i class="fas fa-external-link-alt"></i> Verify
-                    </a>
-                </div>
-            </div>
-
-            <!-- Python Essential 1 -->
-            <div class="certification-card">
-                <div class="cert-header">
-                    <div class="cert-icon"><i class="fab fa-python"></i></div>
-                    <h3>Python Essential 1</h3>
-                </div>
-                <div class="cert-body">
-                    <p class="cert-description">Python Institute Essential Level 1 – Validates core programming concepts and syntax in Python.</p>
-                    <div class="cert-details">
-                        <span class="cert-provider">Python Institute</span>
-                        <span class="cert-status verified">Verified</span>
-                    </div>
-                </div>
-                <div class="cert-footer">
-                    <a href="https://www.credly.com/badges/b5c85a29-45fe-461e-8e56-d45f0059dc92" target="_blank" class="cert-link">
-                        <i class="fas fa-external-link-alt"></i> Verify
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-        <!-- Projects -->
-        <section id="projets" class="projects">
-            <div class="container">
-                <h2 class="section-title">
-                    <span class="title-bracket">[</span> Projects <span class="title-bracket">]</span>
-                </h2>
-                <div class="projects-grid">
-                    <div class="project-card">
-                        <div class="project-header">
-                            <h3>Cybersecurity Portfolio</h3>
-                            <div class="project-status">
-                                <span class="status-dot active"></span>
-                                <span>In progress</span>
-                            </div>
-                        </div>
-                        <div class="project-body">
-                            <p>Personal portfolio with a hacker design, showcasing my skills and certifications in cybersecurity.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">HTML5</span>
-                                <span class="tech-tag">CSS3</span>
-                                <span class="tech-tag">JavaScript</span>
-                                <span class="tech-tag">GitHub Pages</span>
-                            </div>
-                        </div>
-                        <div class="project-footer">
-                            <a href="https://github.com/Aydikoussay" target="_blank" class="project-link">
-                                <i class="fab fa-github"></i> Code
-                            </a>
-                            <a href="#" class="project-link">
-                                <i class="fas fa-external-link-alt"></i> Demo
-                            </a>
-                        </div>
-                    </div>
-
-                    
-<div class="project-card">
-    <div class="project-header">
-        <h3>SwapApp – Symfony Web App</h3>
-        <div class="project-status">
-            <span class="status-dot completed"></span>
-            <span>Completed</span>
-        </div>
-    </div>
-    <div class="project-body">
-        <p>A full-featured web application built with Symfony, enabling users to exchange items or services. Implements user authentication, CRUD operations, form validation, and database integration using Doctrine ORM.</p>
-        <div class="project-tech">
-            <span class="tech-tag">Symfony</span>
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">Twig</span>
-            <span class="tech-tag">Doctrine</span>
-        </div>
-    </div>
-    <div class="project-footer">
-        <a href="https://github.com/Aydikoussay/swapapp-symfony" target="_blank" class="project-link">
-            <i class="fab fa-github"></i> Code
-        </a>
-        <a href="#" class="project-link disabled">
-            <i class="fas fa-external-link-alt"></i> Demo
-        </a>
-    </div>
-</div>
-
-
-
-
-                    
-<div class="project-card">
-    <div class="project-header">
-        <h3>H1ck2Win v1</h3>
-        <div class="project-status">
-            <span class="status-dot completed"></span>
-            <span>Completed </span>
-        </div>
-    </div>
-    <div class="project-body">
-        <p>Web vulnerability scanner developed in Python to detect Cross-Site Scripting (XSS) and SQL Injection (SQLi) flaws. Features modular architecture, payload injection, result reporting (HTML/JSON), and a vulnerable test environment (Tek-Up Reesto).</p>
-        <div class="project-tech">
-            <span class="tech-tag">Python</span>
-            <span class="tech-tag">Flask</span>
-            <span class="tech-tag">Requests</span>
-            <span class="tech-tag">BeautifulSoup</span>
-            <span class="tech-tag">SQLite</span>
-        </div>
-    </div>
-    <div class="project-footer">
-        <a href="https://github.com/Aydikoussay/Projet-python-Scanner-SQLI-XSS/blob/main/xss_sqli_scanner.zip" target="_blank" class="project-link">
-            <i class="fas fa-download"></i> Download Tool
-        </a>
-        <a href="https://github.com/Aydikoussay/Projet-python-Scanner-SQLI-XSS/blob/main/Scanner_sqli_xss_tool.pdf" target="_blank" class="project-link">
-            <i class="fas fa-file-pdf"></i> Report
-        </a>
-    </div>
-</div>
-
-                    
-
-<div class="project-card">
-    <div class="project-header">
-        <h3>Active Directory & Windows Server Security</h3>
-        <div class="project-status">
-            <span class="status-dot completed"></span>
-            <span>Completed</span>
-        </div>
-    </div>
-    <div class="project-body">
-        <p>Deployment and hardening of a Windows Server 2019 Active Directory environment, including OU structuring, GPO policies (for students, HR, and admins), DHCP configuration, firewall rules, and system backup strategies.</p>
-        <div class="project-tech">
-            <span class="tech-tag">Windows Server 2019</span>
-            <span class="tech-tag">Active Directory</span>
-            <span class="tech-tag">GPO</span>
-            <span class="tech-tag">DHCP</span>
-            <span class="tech-tag">PowerShell</span>
-        </div>
-    </div>
-    <div class="project-footer">
-        <a href="https://github.com/Aydikoussay/Projet-Active-Directory-" target="_blank" class="project-link">
-            <i class="fab fa-github"></i> Code
-        </a>
-        <a href="https://github.com/Aydikoussay/Projet-Active-Directory-/blob/main/Projet_AD.pdf" target="_blank" class="project-link">
-            <i class="fas fa-file-pdf"></i> Report
-        </a>
-    </div>
-</div>
-
-
-                    
-
-<div class="project-card">
-    <div class="project-header">
-        <h3>DarkFeed-CVE</h3>
-        <div class="project-status">
-            <span class="status-dot completed"></span>
-            <span>Completed</span>
-        </div>
-    </div>
-    <div class="project-body">
-        <p>DarkFeed-CVE is a cybersecurity tool designed to collect, analyze, and monitor CVE vulnerability intelligence from public sources. It helps security professionals track emerging threats and prioritize remediation actions efficiently.</p>
-        <div class="project-tech">
-            <span class="tech-tag">Python</span>
-            <span class="tech-tag">API Integration</span>
-            <span class="tech-tag">Cyber Threat Intelligence</span>
-            <span class="tech-tag">JSON</span>
-            <span class="tech-tag">Automation</span>
-        </div>
-    </div>
-    <div class="project-footer">
-        <a href="https://github.com/Aydikoussay/DarkFeed-CVE" target="_blank" class="project-link">
-            <i class="fab fa-github"></i> Code
-        </a>
-        <a href="https://github.com/Aydikoussay/DarkFeed-CVE" target="_blank" class="project-link">
-            <i class="fas fa-external-link-alt"></i> Demo
-        </a>
-    </div>
-</div>
-
-
-                    
-                    <div class="project-card">
-                        <div class="project-header">
-                            <h3>Pentesting Lab</h3>
-                            <div class="project-status">
-                                <span class="status-dot planning"></span>
-                                <span>Planned</span>
-                            </div>
-                        </div>
-                        <div class="project-body">
-                            <p>Lab environment for pentesting practice with vulnerable virtual machines.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">VirtualBox</span>
-                                <span class="tech-tag">Kali Linux</span>
-                                <span class="tech-tag">Metasploit</span>
-                                <span class="tech-tag">Nmap</span>
-                            </div>
-                        </div>
-                        <div class="project-footer">
-                            <a href="#" class="project-link disabled">
-                                <i class="fab fa-github"></i> Code
-                            </a>
-                            <a href="#" class="project-link disabled">
-                                <i class="fas fa-external-link-alt"></i> Demo
-                            </a>
-                        </div>
-                    </div>
-                    <div class="project-card">
-                        <div class="project-header">
-                            <h3>Automation Scripts</h3>
-                            <div class="project-status">
-                                <span class="status-dot planning"></span>
-                                <span>Planned</span>
-                            </div>
-                        </div>
-                        <div class="project-body">
-                            <p>Collection of Python scripts for automating security and system administration tasks.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Python</span>
-                                <span class="tech-tag">Bash</span>
-                                <span class="tech-tag">Linux</span>
-                                <span class="tech-tag">Automation</span>
-                            </div>
-                        </div>
-                        <div class="project-footer">
-                            <a href="#" class="project-link disabled">
-                                <i class="fab fa-github"></i> Code
-                            </a>
-                            <a href="#" class="project-link disabled">
-                                <i class="fas fa-external-link-alt"></i> Demo
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Writeups -->
-        <section id="writeups" class="writeups">
-            <div class="container">
-                <h2 class="section-title">
-                    <span class="title-bracket">[</span> Writeups <span class="title-bracket">]</span>
-                </h2>
-                <div class="writeups-grid">
-                    <!-- Vulnyx Controller Writeup -->
-                    <div class="writeup-card">
-                        <div class="writeup-header">
-                            <div class="writeup-icon"><i class="fas fa-server"></i></div>
-                            <h3>Vulnyx Controller</h3>
-                        </div>
-                        <div class="writeup-body">
-                            <p>A detailed writeup of the Vulnyx Controller machine, covering exploitation techniques and privilege escalation methods.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Linux</span>
-                                <span class="tech-tag">PrivEsc</span>
-                                <span class="tech-tag">Exploitation</span>
-                            </div>
-                        </div>
-                        <div class="writeup-footer">
-                            <a href="writeups.html" class="writeup-link">
-                                <i class="fas fa-arrow-right"></i> View All Writeups
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-<!-- Contact -->
-<section id="contact" class="contact">
-    <div class="container">
-        <h2 class="section-title">
-            <span class="title-bracket">[</span> Contact <span class="title-bracket">]</span>
-        </h2>
-        <div class="contact-content">
-            <div class="contact-info">
-                <div class="terminal-contact">
-                    <div class="terminal-header">
-                        <div class="terminal-dot red"></div>
-                        <div class="terminal-dot yellow"></div>
-                        <div class="terminal-dot green"></div>
-                        <span class="terminal-title">contact.sh</span>
-                    </div>
-                    <div class="terminal-body">
-                        <div class="terminal-line">
-                            <span class="prompt">$</span> cat contact_info.txt
-                        </div>
-                        <div class="terminal-line">
-                            <span class="output">Email: koussayaydi2009@gmail.com</span>
-                        </div>
-                        <div class="terminal-line">
-                            <span class="output">LinkedIn: <a href="https://www.linkedin.com/in/koussay-aydi-61a00b260/" target="_blank" style="color: #00a8ff;">linkedin.com/in/koussay-aydi</a></span>
-                        </div>
-                        <div class="terminal-line">
-                            <span class="output">GitHub: <a href="https://github.com/Aydikoussay" target="_blank" style="color: #00ff9d;">github.com/Aydikoussay</a></span>
-                        </div>
-                        <div class="terminal-line">
-                            <span class="output">Status: Available for opportunities</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="contact-form">
-                <p style="text-align: center; margin-bottom: 1.5rem; color: #aaa;">
-                    Click the button below to compose a secure email.
-                </p>
-                <button id="emailButton" class="btn btn-primary">
-                    <i class="fas fa-envelope"></i> Send Email
+                <button class="search-btn" id="searchBtn">
+                    <i class="fas fa-search"></i>
+                    <span>Search...</span>
                 </button>
             </div>
-        </div>
-    </div>
-</section>
-   
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="social-links">
-                    <a href="https://github.com/Aydikoussay" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
-                    <a href="https://www.linkedin.com/in/koussay-aydi-61a00b260/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
-                    <a href="mailto:koussayaydi2009@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3 class="nav-title">MAIN</h3>
+                    <ul>
+                        <li><a href="#about" class="nav-link active">About</a></li>
+                        <li><a href="#skills" class="nav-link">Skills</a></li>
+                        <li><a href="#certifications" class="nav-link">Certifications</a></li>
+                    </ul>
                 </div>
-                <p>© 2025 Koussay Aydi. All rights reserved.</p>
+
+                <div class="nav-section">
+                    <h3 class="nav-title">CONTENT</h3>
+                    <ul>
+                        <li>
+                            <a href="#projects" class="nav-link collapsible">
+                                <i class="fas fa-chevron-right"></i>
+                                Projects
+                            </a>
+                            <ul class="submenu">
+                                <li><a href="#web-projects">Web Security</a></li>
+                                <li><a href="#network-projects">Network Security</a></li>
+                                <li><a href="#tools">Security Tools</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#writeups" class="nav-link collapsible">
+                                <i class="fas fa-chevron-right"></i>
+                                Writeups
+                            </a>
+                            <ul class="submenu">
+                                <li><a href="#htb-writeups">HackTheBox</a></li>
+                                <li><a href="#thm-writeups">TryHackMe</a></li>
+                                <li><a href="#ctf-writeups">CTF Challenges</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3 class="nav-title">RESOURCES</h3>
+                    <ul>
+                        <li><a href="#blog" class="nav-link">Blog</a></li>
+                        <li><a href="#contact" class="nav-link">Contact</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="theme-toggle">
+                    <button class="theme-btn" id="lightTheme" title="Light theme">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <button class="theme-btn" id="darkTheme" title="Dark theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-    </footer>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header with Hero Image -->
+            <div class="hero-section">
+                <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=300&fit=crop" alt="Hero" class="hero-image">
+                <div class="hero-overlay">
+                    <h1>Cybersecurity Portfolio</h1>
+                    <p>Penetration Testing | Red Team | Security Research</p>
+                </div>
+            </div>
+
+            <!-- About Section -->
+            <section id="about" class="content-section">
+                <div class="section-header">
+                    <i class="fas fa-user"></i>
+                    <h2>About</h2>
+                </div>
+                <div class="section-content">
+                    <p>I'm <strong>Koussay Aydi</strong>, a Cybersecurity Engineering Student and passionate penetration tester with expertise in network security, web application testing, and red team operations.</p>
+                    <p>My journey in cybersecurity has been driven by a deep curiosity about how systems work and how to break them responsibly. I specialize in:</p>
+                    <ul class="highlight-list">
+                        <li>Penetration Testing & Vulnerability Assessment</li>
+                        <li>Web Application Security</li>
+                        <li>Active Directory & Kerberos Attacks</li>
+                        <li>Network Reconnaissance & Exploitation</li>
+                        <li>Security Tool Development</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Skills Section -->
+            <section id="skills" class="content-section">
+                <div class="section-header">
+                    <i class="fas fa-code"></i>
+                    <h2>Skills</h2>
+                </div>
+                <div class="section-content">
+                    <div class="skills-grid">
+                        <div class="skill-category">
+                            <h3>Operating Systems</h3>
+                            <div class="skill-tags">
+                                <span class="skill-tag">Linux</span>
+                                <span class="skill-tag">Windows</span>
+                                <span class="skill-tag">Kali Linux</span>
+                                <span class="skill-tag">macOS</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-category">
+                            <h3>Programming Languages</h3>
+                            <div class="skill-tags">
+                                <span class="skill-tag">Python</span>
+                                <span class="skill-tag">Bash</span>
+                                <span class="skill-tag">PowerShell</span>
+                                <span class="skill-tag">C#</span>
+                                <span class="skill-tag">JavaScript</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-category">
+                            <h3>Security Tools</h3>
+                            <div class="skill-tags">
+                                <span class="skill-tag">Metasploit</span>
+                                <span class="skill-tag">Burp Suite</span>
+                                <span class="skill-tag">Nmap</span>
+                                <span class="skill-tag">Wireshark</span>
+                                <span class="skill-tag">Hashcat</span>
+                                <span class="skill-tag">SQLMap</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-category">
+                            <h3>Frameworks & Methodologies</h3>
+                            <div class="skill-tags">
+                                <span class="skill-tag">OWASP Top 10</span>
+                                <span class="skill-tag">MITRE ATT&CK</span>
+                                <span class="skill-tag">NIST</span>
+                                <span class="skill-tag">Angular</span>
+                                <span class="skill-tag">.NET</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Certifications Section -->
+            <section id="certifications" class="content-section">
+                <div class="section-header">
+                    <i class="fas fa-certificate"></i>
+                    <h2>Certifications</h2>
+                </div>
+                <div class="section-content">
+                    <div class="certifications-list">
+                        <div class="cert-item">
+                            <div class="cert-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="cert-details">
+                                <h4>OSCP</h4>
+                                <p>Offensive Security Certified Professional</p>
+                            </div>
+                        </div>
+
+                        <div class="cert-item">
+                            <div class="cert-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="cert-details">
+                                <h4>CEH v11</h4>
+                                <p>Certified Ethical Hacker</p>
+                            </div>
+                        </div>
+
+                        <div class="cert-item">
+                            <div class="cert-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="cert-details">
+                                <h4>CPTS</h4>
+                                <p>Certified Penetration Testing Specialist</p>
+                            </div>
+                        </div>
+
+                        <div class="cert-item">
+                            <div class="cert-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="cert-details">
+                                <h4>CWES</h4>
+                                <p>Certified Web Exploitation Specialist</p>
+                            </div>
+                        </div>
+
+                        <div class="cert-item">
+                            <div class="cert-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="cert-details">
+                                <h4>RHCSA</h4>
+                                <p>Red Hat Certified System Administrator</p>
+                            </div>
+                        </div>
+
+                        <div class="cert-item">
+                            <div class="cert-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="cert-details">
+                                <h4>EWPTXv2</h4>
+                                <p>eLearnSecurity Web Penetration Tester eXtreme</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section id="projects" class="content-section">
+                <div class="section-header">
+                    <i class="fas fa-project-diagram"></i>
+                    <h2>Projects</h2>
+                </div>
+                <div class="section-content">
+                    <div class="projects-grid">
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h3>Web Vulnerability Scanner</h3>
+                                <div class="project-tags">
+                                    <span class="tag">Python</span>
+                                    <span class="tag">Web Security</span>
+                                </div>
+                            </div>
+                            <p>Automated tool for scanning web applications for common vulnerabilities including SQL injection, XSS, and CSRF.</p>
+                            <div class="project-links">
+                                <a href="#" class="btn-link"><i class="fas fa-code"></i> Code</a>
+                                <a href="#" class="btn-link"><i class="fas fa-external-link-alt"></i> Demo</a>
+                            </div>
+                        </div>
+
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h3>Network Reconnaissance Tool</h3>
+                                <div class="project-tags">
+                                    <span class="tag">Python</span>
+                                    <span class="tag">Network</span>
+                                </div>
+                            </div>
+                            <p>Comprehensive network scanning and enumeration tool with support for service detection and OS fingerprinting.</p>
+                            <div class="project-links">
+                                <a href="#" class="btn-link"><i class="fas fa-code"></i> Code</a>
+                                <a href="#" class="btn-link"><i class="fas fa-external-link-alt"></i> Demo</a>
+                            </div>
+                        </div>
+
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h3>Active Directory Exploitation Framework</h3>
+                                <div class="project-tags">
+                                    <span class="tag">PowerShell</span>
+                                    <span class="tag">AD</span>
+                                </div>
+                            </div>
+                            <p>Framework for automating common Active Directory attacks including Kerberoasting and AS-REP roasting.</p>
+                            <div class="project-links">
+                                <a href="#" class="btn-link"><i class="fas fa-code"></i> Code</a>
+                                <a href="#" class="btn-link"><i class="fas fa-external-link-alt"></i> Demo</a>
+                            </div>
+                        </div>
+
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h3>Privilege Escalation Suggester</h3>
+                                <div class="project-tags">
+                                    <span class="tag">Bash</span>
+                                    <span class="tag">Linux</span>
+                                </div>
+                            </div>
+                            <p>Automated tool for identifying potential privilege escalation vectors on Linux systems.</p>
+                            <div class="project-links">
+                                <a href="#" class="btn-link"><i class="fas fa-code"></i> Code</a>
+                                <a href="#" class="btn-link"><i class="fas fa-external-link-alt"></i> Demo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Writeups Section -->
+            <section id="writeups" class="content-section">
+                <div class="section-header">
+                    <i class="fas fa-pen-fancy"></i>
+                    <h2>Writeups</h2>
+                </div>
+                <div class="section-content">
+                    <div class="writeups-list">
+                        <article class="writeup-item">
+                            <div class="writeup-meta">
+                                <span class="writeup-category">HackTheBox</span>
+                                <span class="writeup-date">March 2026</span>
+                            </div>
+                            <h3>Exploiting Insecure Deserialization in Java Applications</h3>
+                            <p>Detailed walkthrough of identifying and exploiting Java deserialization vulnerabilities in a real-world scenario.</p>
+                            <a href="#" class="read-more">Read More →</a>
+                        </article>
+
+                        <article class="writeup-item">
+                            <div class="writeup-meta">
+                                <span class="writeup-category">TryHackMe</span>
+                                <span class="writeup-date">February 2026</span>
+                            </div>
+                            <h3>Active Directory Lateral Movement Techniques</h3>
+                            <p>Comprehensive guide on moving laterally within an Active Directory environment using various attack vectors.</p>
+                            <a href="#" class="read-more">Read More →</a>
+                        </article>
+
+                        <article class="writeup-item">
+                            <div class="writeup-meta">
+                                <span class="writeup-category">CTF Challenge</span>
+                                <span class="writeup-date">January 2026</span>
+                            </div>
+                            <h3>Reversing a Custom Encryption Algorithm</h3>
+                            <p>Step-by-step analysis of reverse engineering a custom encryption implementation to recover the flag.</p>
+                            <a href="#" class="read-more">Read More →</a>
+                        </article>
+
+                        <article class="writeup-item">
+                            <div class="writeup-meta">
+                                <span class="writeup-category">Security Research</span>
+                                <span class="writeup-date">December 2025</span>
+                            </div>
+                            <h3>Zero-Day Analysis: Kernel Privilege Escalation</h3>
+                            <p>In-depth analysis of a kernel vulnerability and techniques for exploiting it to achieve code execution.</p>
+                            <a href="#" class="read-more">Read More →</a>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section id="contact" class="content-section">
+                <div class="section-header">
+                    <i class="fas fa-envelope"></i>
+                    <h2>Let's Connect</h2>
+                </div>
+                <div class="section-content">
+                    <p>I'm always interested in discussing cybersecurity, collaborating on projects, or exploring new opportunities in the field.</p>
+                    
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <h3>Email</h3>
+                            <a href="mailto:koussay@example.com">koussay@example.com</a>
+                        </div>
+                        <div class="contact-item">
+                            <h3>LinkedIn</h3>
+                            <a href="https://linkedin.com/in/koussay-aydi" target="_blank">linkedin.com/in/koussay-aydi</a>
+                        </div>
+                        <div class="contact-item">
+                            <h3>GitHub</h3>
+                            <a href="https://github.com/Aydikoussay" target="_blank">github.com/Aydikoussay</a>
+                        </div>
+                    </div>
+
+                    <div class="social-links">
+                        <a href="https://github.com/Aydikoussay" class="social-btn" title="GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://linkedin.com/in/koussay-aydi" class="social-btn" title="LinkedIn">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="mailto:koussay@example.com" class="social-btn" title="Email">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <p>&copy; 2026 Koussay Aydi. All rights reserved.</p>
+                <p>Last updated: March 2026</p>
+            </footer>
+        </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
