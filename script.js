@@ -1,262 +1,296 @@
-// Portfolio JavaScript - Koussay Aydi
-document.addEventListener('DOMContentLoaded', function () {
-    initNavigation();
-    initScrollEffects();
-    initTypewriterEffect();
-    initContactForm();
-    initMobileMenu();
-    initAnimations();
-    initVideoParallax();
-    initExternalLinks();
-    consoleEasterEgg();
-    initSecretAccess();
+// ============================================
+// NAVIGATION & SIDEBAR FUNCTIONALITY
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeNavigation();
+    initializeTheme();
+    initializeScrollSpy();
 });
 
-// Navigation fluide
-function initNavigation() {
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function (e) {
+// Initialize Navigation
+function initializeNavigation() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const collapsibleLinks = document.querySelectorAll('.nav-link.collapsible');
+
+    // Handle collapsible menus
+    collapsibleLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
             e.preventDefault();
-            const targetId = this.getAttribute('href');
-            const target = document.querySelector(targetId);
-            if (target) {
-                const headerHeight = document.querySelector('#header').offsetHeight;
-                const offset = target.offsetTop - headerHeight - 20;
-                window.scrollTo({
-                    top: offset,
-                    behavior: 'smooth'
-                });
+            const submenu = this.nextElementSibling;
+            
+            if (submenu && submenu.classList.contains('submenu')) {
+                submenu.classList.toggle('open');
+                this.classList.toggle('open');
+            }
+        });
+    });
+
+    // Handle nav link clicks
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (!this.classList.contains('collapsible')) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                
+                if (href && href.startsWith('#')) {
+                    const target = document.querySelector(href);
+                    if (target) {
+                        // Remove active class from all links
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        // Add active class to clicked link
+                        this.classList.add('active');
+                        // Scroll to target
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
             }
         });
     });
 }
 
-// Effets au scroll (header + lien actif)
-function initScrollEffects() {
-    const header = document.querySelector('#header');
-    window.addEventListener('scroll', () => {
-        const scrollY = window.pageYOffset;
-        if (scrollY > 50) {
-            header.style.background = 'rgba(10, 10, 10, 0.98)';
-            header.style.boxShadow = '0 2px 20px rgba(0, 255, 157, 0.3)';
-        } else {
-            header.style.background = 'rgba(10, 10, 10, 0.95)';
-            header.style.boxShadow = '0 2px 10px rgba(0, 255, 157, 0.2)';
-        }
-        updateActiveNavLink();
-    });
-}
+// ============================================
+// THEME TOGGLE
+// ============================================
 
-// Mettre à jour le lien actif dans la navbar
-function updateActiveNavLink() {
-    const sections = document.querySelectorAll('section[id]');
-    const links = document.querySelectorAll('.nav-link');
-    const offset = document.querySelector('#header').offsetHeight + 100;
-
-    let current = '';
-    sections.forEach(section => {
-        if (window.pageYOffset >= section.offsetTop - offset) {
-            current = section.getAttribute('id');
-        }
-    });
-
-    links.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === `#${current}`) {
-            link.classList.add('active');
-        }
-    });
-}
-
-// Effet machine à écrire
-function initTypewriterEffect() {
-    const el = document.querySelector('.typewriter');
-    if (!el) return;
-    const text = el.textContent.trim();
-    el.textContent = '';
-    let i = 0;
-    const type = () => {
-        if (i < text.length) {
-            el.textContent += text.charAt(i);
-            i++;
-            setTimeout(type, 80);
-        } else {
-            el.style.borderRight = 'none';
-        }
-    };
-    setTimeout(type, 600);
-}
-
-// ✅ Nouvelle fonction : ouvrir un e-mail pré-rempli
-function initContactForm() {
-    const button = document.getElementById('emailButton');
-    if (!button) return;
-
-    button.addEventListener('click', function () {
-        const email = 'koussayaydi2009@gmail.com';
-        const subject = encodeURIComponent('Portfolio Contact');
-        const body = encodeURIComponent(
-            'Hello Koussay,\n\n' +
-            'I found your portfolio interesting and would like to get in touch.\n\n' +
-            'Best regards,\n'
-        );
-        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-    });
-}
-// Notification toast
-function showNotification(message, type = 'info') {
-    document.querySelectorAll('.notification').forEach(n => n.remove());
-
-    const notif = document.createElement('div');
-    notif.className = `notification notification-${type}`;
-    notif.innerHTML = `
-        <div class="notification-content">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-            <span>${message}</span>
-        </div>
-        <button class="notification-close"><i class="fas fa-times"></i></button>
-    `;
-
-    notif.style.cssText = `
-        position: fixed; top: 100px; right: 20px; z-index: 10000;
-        background: ${type === 'success' ? 'linear-gradient(135deg, #00ff9d, #00a8ff)' : 'linear-gradient(135deg, #ff3860, #ff6b9d)'};
-        color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        display: flex; align-items: center; gap: 1rem; min-width: 300px; animation: slideInRight 0.3s ease;
-    `;
-
-    document.body.appendChild(notif);
-
-    setTimeout(() => {
-        notif.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => notif.remove(), 300);
-    }, 4000);
-
-    notif.querySelector('.notification-close').onclick = () => {
-        notif.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => notif.remove(), 300);
-    };
-}
-
-// Menu mobile
-function initMobileMenu() {
-    const toggle = document.querySelector('.mobile-menu-toggle');
+function initializeTheme() {
+    const lightThemeBtn = document.getElementById('lightTheme');
+    const darkThemeBtn = document.getElementById('darkTheme');
     const body = document.body;
-    if (!toggle) return;
 
-    toggle.addEventListener('click', () => {
-        body.classList.toggle('mobile-menu-open');
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    
+    if (savedTheme === 'dark') {
+        body.classList.add('dark-mode');
+        darkThemeBtn.classList.add('active');
+    } else {
+        lightThemeBtn.classList.add('active');
+    }
+
+    // Light theme button
+    lightThemeBtn.addEventListener('click', function() {
+        body.classList.remove('dark-mode');
+        lightThemeBtn.classList.add('active');
+        darkThemeBtn.classList.remove('active');
+        localStorage.setItem('theme', 'light');
     });
 
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-            body.classList.remove('mobile-menu-open');
+    // Dark theme button
+    darkThemeBtn.addEventListener('click', function() {
+        body.classList.add('dark-mode');
+        darkThemeBtn.classList.add('active');
+        lightThemeBtn.classList.remove('active');
+        localStorage.setItem('theme', 'dark');
+    });
+}
+
+// ============================================
+// SCROLL SPY - Update active nav link on scroll
+// ============================================
+
+function initializeScrollSpy() {
+    const sections = document.querySelectorAll('[id]');
+    const navLinks = document.querySelectorAll('.nav-link:not(.collapsible)');
+
+    window.addEventListener('scroll', function() {
+        let current = '';
+
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            
+            if (pageYOffset >= sectionTop - 200) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${current}`) {
+                link.classList.add('active');
+            }
         });
     });
 }
 
-// Animations d'apparition au scroll
-function initAnimations() {
-    const observer = new IntersectionObserver((entries) => {
+// ============================================
+// SEARCH FUNCTIONALITY
+// ============================================
+
+const searchBtn = document.querySelector('.search-btn');
+if (searchBtn) {
+    searchBtn.addEventListener('click', function() {
+        const query = prompt('Search portfolio...');
+        if (query) {
+            searchPortfolio(query);
+        }
+    });
+}
+
+function searchPortfolio(query) {
+    const sections = document.querySelectorAll('.content-section');
+    const searchTerm = query.toLowerCase();
+    let found = false;
+
+    sections.forEach(section => {
+        const text = section.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            section.style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth' });
+            found = true;
+        } else {
+            section.style.display = 'none';
+        }
+    });
+
+    if (!found) {
+        alert(`No results found for "${query}"`);
+        // Reset display
+        sections.forEach(section => {
+            section.style.display = 'block';
+        });
+    }
+}
+
+// ============================================
+// SMOOTH SCROLL FOR ANCHOR LINKS
+// ============================================
+
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (href !== '#' && document.querySelector(href)) {
+            e.preventDefault();
+            document.querySelector(href).scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    });
+});
+
+// ============================================
+// ANIMATION ON SCROLL
+// ============================================
+
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+        }
+    });
+}, observerOptions);
+
+// Observe all project cards and writeup items
+document.querySelectorAll('.project-card, .writeup-item, .cert-item').forEach(element => {
+    element.style.opacity = '0';
+    element.style.transform = 'translateY(20px)';
+    element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(element);
+});
+
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
+
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + K for search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const query = prompt('Search portfolio...');
+        if (query) {
+            searchPortfolio(query);
+        }
+    }
+
+    // Ctrl/Cmd + / for help
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        alert('Keyboard Shortcuts:\n\nCtrl/Cmd + K: Search\nCtrl/Cmd + /: Help\n\nUse the sidebar to navigate sections.');
+    }
+});
+
+// ============================================
+// MOBILE MENU TOGGLE
+// ============================================
+
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('mobile-open');
+}
+
+// Close mobile menu when clicking on a link
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('mobile-open');
+        }
+    });
+});
+
+// ============================================
+// PERFORMANCE: Lazy load images
+// ============================================
+
+if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-                observer.unobserve(entry.target);
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.add('loaded');
+                observer.unobserve(img);
             }
         });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    });
 
-    document.querySelectorAll('.skill-category, .certification-card, .project-card, .about-content, .contact-content').forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(el);
+    document.querySelectorAll('img[data-src]').forEach(img => {
+        imageObserver.observe(img);
     });
 }
 
-// Parallaxe vidéo légère
-function initVideoParallax() {
-    const video = document.getElementById('video-background');
-    if (!video) return;
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        video.style.transform = `translateY(${scrolled * -0.4}px)`;
+// ============================================
+// UTILITY: Copy to clipboard
+// ============================================
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
     });
 }
 
-// Liens externes → nouvel onglet
-function initExternalLinks() {
-    document.addEventListener('click', e => {
-        const link = e.target.closest('a[href^="http"]');
-        if (link && link.hostname !== location.hostname) {
-            e.preventDefault();
-            window.open(link.href, '_blank', 'noopener,noreferrer');
-        }
-    });
+// ============================================
+// UTILITY: Print page
+// ============================================
+
+function printPage() {
+    window.print();
 }
 
-// Easter egg console
-function consoleEasterEgg() {
-    console.log(`
-    ╔══════════════════════════════════════════════════════════════╗
-    ║                                                              ║
-    ║     Bienvenue dans le portfolio de Koussay Aydi             ║
-    ║                                                              ║
-    ║     Cybersecurity Engineering Student                       ║
-    ║     Passionné par la sécurité informatique                  ║
-    ║     Ethical Hacker & Penetration Tester                     ║
-    ║                                                              ║
-    ║     Email: koussayaydi2009@gmail.com                        ║
-    ║     GitHub: https://github.com/Aydikoussay                    ║
-    ║                                                              ║
-    ║     Merci de visiter mon portfolio!                        ║
-    ║                                                              ║
-    ╚══════════════════════════════════════════════════════════════╝
-    `);
-    console.log('%cSecurity Note: Ce portfolio a été développé avec les meilleures pratiques de sécurité web.', 'color: #00ff9d; font-weight: bold; font-size: 14px;');
+// ============================================
+// UTILITY: Share page
+// ============================================
+
+function sharePage() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Koussay Aydi - Cybersecurity Portfolio',
+            text: 'Check out my cybersecurity portfolio!',
+            url: window.location.href
+        }).catch(err => console.log('Error sharing:', err));
+    } else {
+        alert('Share functionality not supported on this browser.');
+    }
 }
 
-// 🔐 Fonction secrète pour voir les messages
-function initSecretAccess() {
-    window.viewMessages = function(password = '') {
-        const SECRET = 'cybersec2025'; // ← MODIFIE CE MOT DE PASSE
-        if (password === SECRET) {
-            const messages = JSON.parse(localStorage.getItem('koussay_contact_messages') || '[]');
-            if (messages.length === 0) {
-                console.log('%c🔒 Aucun message sauvegardé.', 'color: #ff9d00; font-weight: bold;');
-            } else {
-                console.log(`%c🔐 ${messages.length} message(s) sauvegardé(s) :`, 'color: #00ff9d; font-weight: bold;');
-                messages.forEach((msg, i) => {
-                    console.log(`\n--- Message #${i+1} (${msg.timestamp}) ---`);
-                    console.log(`Name: ${msg.name}`);
-                    console.log(`Email: ${msg.email}`);
-                    console.log(`Subject: ${msg.subject}`);
-                    console.log(`Message: ${msg.message}`);
-                });
-            }
-            return messages;
-        } else {
-            console.warn('🔒 Accès refusé. Utilise : viewMessages("cybersec2025")');
-            return null;
-        }
-    };
-}
-
-// Injection des animations CSS nécessaires
-const animationCSS = `
-    @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    .notification-close {
-        background: none; border: none; color: white; cursor: pointer; padding: 0.25rem; border-radius: 4px;
-    }
-    .notification-close:hover { background: rgba(255,255,255,0.2); }
-`;
-const style = document.createElement('style');
-style.textContent = animationCSS;
-document.head.appendChild(style);
+console.log('Portfolio loaded successfully!');
