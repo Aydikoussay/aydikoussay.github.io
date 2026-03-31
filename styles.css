@@ -56,7 +56,14 @@ body {
 /* ============================================
    SIDEBAR
    ============================================ */
-
+.image-container {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--primary-green);
+    box-shadow: var(--shadow-sm);
+}
 .sidebar {
     width: 280px;
     background-color: var(--bg-white);
