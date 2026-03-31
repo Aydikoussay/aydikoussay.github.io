@@ -44,17 +44,16 @@ body {
     line-height: 1.6;
 }
 /* ── Profile photo ── */
-.sidebar img,
-.profile-photo,
-img[src*="koussay"] {
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;           /* makes it circular */
-  object-fit: cover;            /* crops without stretching */
-  object-position: center top;  /* keeps face in frame */
+.profile-photo {
+  width: 130px !important;
+  max-width: 130px !important;
+  height: 130px !important;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
   display: block;
   margin: 0 auto 1rem;
-  border: 3px solid #00ff9f;    /* green hacker accent */
+  border: 3px solid #00ff9f;
   box-shadow: 0 0 0 5px rgba(0, 255, 159, 0.12);
 }
 /* ============================================
