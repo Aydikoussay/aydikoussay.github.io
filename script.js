@@ -1,14 +1,14 @@
-const themeToggle = document.getElementById('themeToggle');
+﻿const themeToggle = document.getElementById('themeToggle');
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileNav = document.getElementById('mobileNav');
 const scrollProgress = document.getElementById('scrollProgress');
 const typeText = document.getElementById('typeText');
 
 const TYPE_LINES = [
-    'Analyzing network traffic...',
-    'Hunting anomalous behavior...',
-    'Building detection rules...',
-    'Validating security controls...'
+    'whoami',
+    'red-team-operator',
+    'nmap -A target.local',
+    'privilege escalation successful'
 ];
 let lineIndex = 0;
 let charIndex = 0;
@@ -21,7 +21,7 @@ function typeLoop() {
         charIndex += 1;
         if (charIndex === currentLine.length) {
             deleting = true;
-            setTimeout(typeLoop, 1200);
+            setTimeout(typeLoop, 1000);
             return;
         }
     } else {
@@ -32,21 +32,7 @@ function typeLoop() {
             lineIndex = (lineIndex + 1) % TYPE_LINES.length;
         }
     }
-    setTimeout(typeLoop, deleting ? 45 : 70);
-}
-
-function updateTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.body.dataset.theme = savedTheme;
-    themeToggle.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-}
-
-function toggleTheme() {
-    const current = document.body.dataset.theme;
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.body.dataset.theme = next;
-    localStorage.setItem('theme', next);
-    updateTheme();
+    setTimeout(typeLoop, deleting ? 45 : 75);
 }
 
 function updateScrollProgress() {
@@ -66,7 +52,11 @@ function openMobileNav() {
     mobileNav.setAttribute('aria-hidden', 'false');
 }
 
-themeToggle?.addEventListener('click', toggleTheme);
+themeToggle?.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    themeToggle.innerHTML = document.body.classList.contains('light-mode') ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+});
+
 mobileMenuBtn?.addEventListener('click', () => {
     if (mobileNav.classList.contains('open')) {
         closeMobileNav();
@@ -81,13 +71,12 @@ document.querySelectorAll('.mobile-nav a').forEach(link => {
 
 window.addEventListener('scroll', updateScrollProgress);
 window.addEventListener('load', () => {
-    updateTheme();
     typeLoop();
     updateScrollProgress();
 });
 
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (event) {
+    anchor.addEventListener('click', function(event) {
         const target = document.querySelector(this.getAttribute('href'));
         if (target) {
             event.preventDefault();
@@ -95,4 +84,17 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             closeMobileNav();
         }
     });
+});
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.15, rootMargin: '0px 0px -100px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => {
+    observer.observe(el);
 });
