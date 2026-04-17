@@ -101,12 +101,13 @@ img {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--spacing-md);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    gap: var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-xl);
     backdrop-filter: blur(20px);
-    background-color: rgba(4, 6, 12, 0.85);
-    border-bottom: 1px solid rgba(255, 0, 51, 0.08);
-    transition: background-color var(--transition), border-color var(--transition);
+    background-color: rgba(4, 6, 12, 0.9);
+    border-bottom: 1px solid rgba(255, 0, 51, 0.1);
+    transition: all var(--transition-fast);
+    min-height: 72px;
 }
 
 .topbar:hover {
@@ -117,46 +118,70 @@ img {
 .brand {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
+    flex-shrink: 0;
 }
 
 .brand-mark {
     display: grid;
     place-items: center;
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     border-radius: var(--radius-soft);
     background: linear-gradient(135deg, var(--accent), var(--accent-alt));
     color: var(--bg);
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     letter-spacing: -0.02em;
-    box-shadow: 0 4px 12px rgba(255, 0, 51, 0.3);
+    box-shadow: 0 4px 16px rgba(255, 0, 51, 0.4);
+    transition: all var(--transition-fast);
+}
+
+.brand-mark:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 0, 51, 0.5);
+}
+
+.brand-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .brand-label {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 600;
     color: var(--text);
+    line-height: 1.2;
 }
 
 .brand-subtitle {
     display: block;
-    margin-top: 2px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--muted);
     font-weight: 500;
+    line-height: 1.3;
+    max-width: 280px;
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+    justify-content: center;
 }
 
 .main-nav a {
     position: relative;
     color: var(--muted);
-    font-size: 0.94rem;
+    font-size: 0.95rem;
     font-weight: 500;
-    transition: color var(--transition-fast);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    transition: all var(--transition-fast);
+    padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--radius-soft);
+    text-decoration: none;
 }
 
 .main-nav a::before {
@@ -167,26 +192,29 @@ img {
     width: 0;
     height: 2px;
     background: linear-gradient(90deg, var(--accent), var(--accent-alt));
-    transition: width var(--transition), left var(--transition);
+    transition: all var(--transition-fast);
     border-radius: 1px;
+    transform: translateX(-50%);
 }
 
 .main-nav a:hover::before,
 .main-nav a:focus-visible::before {
     width: 100%;
-    left: 0;
+    left: 50%;
 }
 
 .main-nav a:hover,
 .main-nav a:focus-visible {
     color: var(--accent);
-    background: rgba(255, 0, 51, 0.05);
+    background: rgba(255, 0, 51, 0.08);
+    transform: translateY(-1px);
 }
 
 .topbar-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
 }
 
 .icon-btn {
@@ -825,7 +853,17 @@ img {
     }
     .topbar {
         flex-wrap: wrap;
-        padding: 16px 24px;
+        padding: var(--spacing-md) var(--spacing-lg);
+        gap: var(--spacing-md);
+        min-height: auto;
+    }
+    .brand {
+        flex: 1;
+        min-width: 0;
+    }
+    .brand-subtitle {
+        font-size: 0.8rem;
+        max-width: 200px;
     }
     .main-nav {
         display: none;
@@ -834,16 +872,32 @@ img {
         display: inline-flex;
     }
     .hero-panel {
-        gap: 20px;
+        gap: var(--spacing-lg);
     }
 }
 
 @media (max-width: 680px) {
     .page-shell {
-        padding: 24px 18px 64px;
+        padding: var(--spacing-lg) var(--spacing-md) 64px;
     }
     .topbar {
-        padding: 16px 18px;
+        padding: var(--spacing-md) var(--spacing-md);
+        gap: var(--spacing-sm);
+    }
+    .brand {
+        gap: var(--spacing-md);
+    }
+    .brand-mark {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    .brand-label {
+        font-size: 1rem;
+    }
+    .brand-subtitle {
+        font-size: 0.75rem;
+        max-width: 180px;
     }
     .hero-copy h1 {
         font-size: 2.8rem;
