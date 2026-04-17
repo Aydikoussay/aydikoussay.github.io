@@ -4,6 +4,24 @@ const mobileNav = document.getElementById('mobileNav');
 const scrollProgress = document.getElementById('scrollProgress');
 const typeText = document.getElementById('typeText');
 
+// Theme management
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    } else {
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light-mode');
+    const isLightMode = document.body.classList.contains('light-mode');
+    themeToggle.innerHTML = isLightMode ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
+}
+
 const TYPE_LINES = [
     'whoami',
     'red-team-operator',
@@ -52,10 +70,7 @@ function openMobileNav() {
     mobileNav.setAttribute('aria-hidden', 'false');
 }
 
-themeToggle?.addEventListener('click', () => {
-    document.body.classList.toggle('light-mode');
-    themeToggle.innerHTML = document.body.classList.contains('light-mode') ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
-});
+themeToggle?.addEventListener('click', toggleTheme);
 
 mobileMenuBtn?.addEventListener('click', () => {
     if (mobileNav.classList.contains('open')) {
@@ -71,6 +86,7 @@ document.querySelectorAll('.mobile-nav a').forEach(link => {
 
 window.addEventListener('scroll', updateScrollProgress);
 window.addEventListener('load', () => {
+    initTheme();
     typeLoop();
     updateScrollProgress();
 });
