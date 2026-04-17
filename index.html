@@ -3,531 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koussay Aydi - Cybersecurity Portfolio</title>
+    <title>Koussay Aydi | Cybersecurity Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div class="container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <div class="avatar">KA</div>
-                    <h1>Koussay Aydi</h1>
-                </div>
-                <button class="search-btn" id="searchBtn">
-                    <i class="fas fa-search"></i>
-                    <span>Search...</span>
-                </button>
+<body data-theme="dark">
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div>
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Security Analyst • SOC Analyst • Penetration Tester</span>
             </div>
-
-            <nav class="sidebar-nav">
-                <div class="nav-section">
-                    <h3 class="nav-title">MAIN</h3>
-                    <ul>
-                        <li><a href="#about" class="nav-link active">About</a></li>
-                        <li><a href="#skills" class="nav-link">Skills</a></li>
-                        <li><a href="#certifications" class="nav-link">Certifications</a></li>
-                    </ul>
+        </div>
+        <nav class="main-nav" role="navigation" aria-label="Primary navigation">
+            <a href="#about">About</a>
+            <a href="#skills">Skills</a>
+            <a href="#certifications">Certifications</a>
+            <a href="#projects">Projects</a>
+            <a href="#experience">Experience</a>
+            <a href="#contact">Contact</a>
+        </nav>
+        <div class="topbar-actions">
+            <button id="themeToggle" class="icon-btn" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+            <button id="mobileMenuBtn" class="icon-btn mobile-menu-btn" aria-label="Open mobile menu"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+        <a href="#about">About</a>
+        <a href="#skills">Skills</a>
+        <a href="#certifications">Certifications</a>
+        <a href="#projects">Projects</a>
+        <a href="#experience">Experience</a>
+        <a href="#contact">Contact</a>
+    </div>
+    <main class="page-shell">
+        <section class="hero-panel" id="hero">
+            <div class="hero-copy fade-up">
+                <span class="eyebrow">Cybersecurity Analyst | SOC Analyst | Penetration Tester</span>
+                <h1>Koussay Aydi</h1>
+                <p>Building resilient defenses, hunting threats, and breaking systems ethically to improve security posture.</p>
+                <div class="hero-actions">
+                    <a href="#projects" class="btn btn-primary">View Projects</a>
+                    <a href="#contact" class="btn btn-secondary">Contact Me</a>
                 </div>
-
-                <div class="nav-section">
-                    <h3 class="nav-title">CONTENT</h3>
-                    <ul>
-                        <li>
-                            <a href="#projects" class="nav-link collapsible">
-                                <i class="fas fa-chevron-right"></i>
-                                Projects
-                            </a>
-                            <ul class="submenu">
-                                <li><a href="#projects">All Projects</a></li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#writeups" class="nav-link collapsible">
-                                <i class="fas fa-chevron-right"></i>
-                                Writeups
-                            </a>
-                            <ul class="submenu">
-                                <li><a href="#writeups">Latest Writeups</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="nav-section">
-                    <h3 class="nav-title">RESOURCES</h3>
-                    <ul>
-                        <li><a href="#contact" class="nav-link">Contact</a></li>
-                    </ul>
-                </div>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div class="theme-toggle">
-                    <button class="theme-btn" id="lightTheme" title="Light theme">
-                        <i class="fas fa-sun"></i>
-                    </button>
-                    <button class="theme-btn" id="darkTheme" title="Dark theme">
-                        <i class="fas fa-moon"></i>
-                    </button>
+                <div class="hero-code">
+                    <span class="code-label">Tech focus:</span>
+                    <code>SIEM · Linux · Python · Threat Hunting · Detection</code>
                 </div>
             </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Header with Hero Image -->
-            <div class="hero-section">
-                <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=300&fit=crop" alt="Hero" class="hero-image">
-                <div class="hero-overlay">
-                    <h1>Cybersecurity Portfolio</h1>
-                    <p>Penetration Testing | Red Team </p>
+            <div class="hero-frame fade-up delay-150">
+                <div class="terminal-card" aria-label="Terminal preview">
+                    <div class="terminal-header">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="terminal-body">
+                        <pre><code id="typeText"></code><span class="cursor">|</span></pre>
+                    </div>
                 </div>
             </div>
-
-            <!-- About Section -->
-            <section id="about" class="content-section">
-                <div class="section-header">
-                    <i class="fas fa-user"></i>
-                    <h2>About</h2>
+        </section>
+        <section id="about" class="section panel fade-up">
+            <div class="section-header">
+                <div>
+                    <p class="section-label">01</p>
+                    <h2>About Me</h2>
                 </div>
-                <div class="section-content">
-                    <p>I'm <strong>Koussay Aydi</strong>, a Cybersecurity Engineering Student passionate about cybersecurity and development. I specialize in identifying and fixing vulnerabilities in computer systems.</p>
-                    <p>My approach combines strong technical expertise with a deep understanding of the security challenges in an ever-evolving digital world. I am passionate about:</p>
-                    <ul class="highlight-list">
-                        <li>Ethical Hacking & Penetration Testing</li>
-                        <li>System Administration & Security Auditing</li>
-                        <li>Red Teaming & Incident Response</li>
-                        <li>Web Development & Security</li>
-                        <li>Active Directory & Windows Security</li>
-                    </ul>
-                    <p><strong>Philosophy : </strong> Security is not a product, but a process.</p>
+                <p>Driven by curiosity, accuracy, and a defense-first mindset, I translate technical depth into meaningful security outcomes.</p>
+            </div>
+            <div class="about-grid">
+                <div class="about-copy">
+                    <p>As a cybersecurity professional, I blend offensive and defensive thinking to detect threats, validate risk, and build secure systems. My work focuses on SOC operations, threat detection, scripting automation, and penetration testing.</p>
+                    <p>I enjoy turning complex logs into actionable detections, validating attack paths, and documenting findings clearly for both technical teams and business stakeholders.</p>
                 </div>
-            </section>
-
-            <!-- Skills Section -->
-            <section id="skills" class="content-section">
-                <div class="section-header">
-                    <i class="fas fa-code"></i>
+                <div class="about-cards">
+                    <article class="info-card">
+                        <h3>Mindset</h3>
+                        <p>Curious, disciplined, and always searching for hidden patterns. I prioritize accuracy, repeatability, and proactive defense.</p>
+                    </article>
+                    <article class="info-card">
+                        <h3>Tools</h3>
+                        <p>Splunk, ELK, Zeek, Suricata, Wireshark, Nmap, Metasploit, Burp Suite, BloodHound, Kali Linux, Python.</p>
+                    </article>
+                    <article class="info-card">
+                        <h3>Focus</h3>
+                        <p>Detection engineering, incident investigation, red team labs, automation scripts, and secure architecture review.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+        <section id="skills" class="section panel fade-up">
+            <div class="section-header">
+                <div>
+                    <p class="section-label">02</p>
                     <h2>Skills</h2>
                 </div>
-                <div class="section-content">
-                    <div class="skills-grid">
-                        <div class="skill-category">
-                            <h3>Cybersecurity</h3>
-                            <div class="skill-tags">
-                                <span class="skill-tag">Penetration Testing</span>
-                                <span class="skill-tag">Ethical Hacking</span>
-                                <span class="skill-tag">Vulnerability Assessment</span>
-                                <span class="skill-tag">Security Auditing</span>
-                                
-                            </div>
-                        </div>
-
-                        <div class="skill-category">
-                            <h3>System Administration</h3>
-                            <div class="skill-tags">
-                                <span class="skill-tag">Linux (RHEL, Ubuntu)</span>
-                                <span class="skill-tag">Windows Server</span>
-                                <span class="skill-tag">Network Configuration</span>
-                                <span class="skill-tag">Shell Scripting</span>
-                                
-                            </div>
-                        </div>
-
-                        <div class="skill-category">
-                            <h3>Cloud & DevOps</h3>
-                            <div class="skill-tags">
-                                <span class="skill-tag">Oracle Cloud (OCI)</span>
-                                <span class="skill-tag">AWS Basics</span>
-                                <span class="skill-tag">Docker</span>
-                                <span class="skill-tag">CI/CD Pipelines</span>
-                              
-                            </div>
-                        </div>
-
-                        <div class="skill-category">
-                            <h3>Development</h3>
-                            <div class="skill-tags">
-                                <span class="skill-tag">Python</span>
-                                <span class="skill-tag">Angular</span>
-                                <span class="skill-tag">.NET Framework</span>
-                                <span class="skill-tag">HTML/CSS/JavaScript</span>
-                                <span class="skill-tag">SQL</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Certifications Section -->
-            <section id="certifications" class="content-section">
-                <div class="section-header">
-                    <i class="fas fa-certificate"></i>
+                <p>Core capabilities that support security operations, threat hunting, and penetration testing workflows.</p>
+            </div>
+            <div class="skills-grid">
+                <article class="skill-card">
+                    <div class="skill-icon"><i class="fas fa-network-wired"></i></div>
+                    <h3>Networking</h3>
+                    <p>TCP/IP, routing, packet analysis, IDS/IPS, and secure network architecture.</p>
+                </article>
+                <article class="skill-card">
+                    <div class="skill-icon"><i class="fab fa-linux"></i></div>
+                    <h3>Linux</h3>
+                    <p>Shell scripting, process monitoring, system hardening, and kernel-level troubleshooting.</p>
+                </article>
+                <article class="skill-card">
+                    <div class="skill-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>SIEM Tools</h3>
+                    <p>Log ingestion, detection rules, alert tuning, dashboards, and incident response workflows.</p>
+                </article>
+                <article class="skill-card">
+                    <div class="skill-icon"><i class="fab fa-python"></i></div>
+                    <h3>Python / Scripting</h3>
+                    <p>Automation, parsing logs, payload generation, and security tool integration.</p>
+                </article>
+                <article class="skill-card">
+                    <div class="skill-icon"><i class="fas fa-terminal"></i></div>
+                    <h3>Penetration Testing</h3>
+                    <p>Recon, exploitation, post-exploitation, and reporting for web, network, and AD targets.</p>
+                </article>
+            </div>
+        </section>
+        <section id="certifications" class="section panel fade-up">
+            <div class="section-header">
+                <div>
+                    <p class="section-label">03</p>
                     <h2>Certifications</h2>
                 </div>
-                <div class="section-content">
-                    <div class="certifications-list">
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fas fa-crosshairs"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>CRTO</h4>
-                                <p>Certified Red Team Operator – Practical certification covering red team operations, C2 frameworks, Active Directory attacks, and evasion techniques.</p>
-                                <span class="cert-provider">Zero Point Security</span>
-                                <a href="https://certs.zeropointsecurity.co.uk/ad853e66-f8cf-4ed9-a05f-7cfc392edd05" target="_blank" class="cert-link">Verify</a>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fas fa-bug"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>eJPTv2</h4>
-                                <p>eLearnSecurity Junior Penetration Tester v2 – Hands-on certification validating foundational penetration testing and network exploitation skills.</p>
-                                <span class="cert-provider">INE Security</span>
-                                <a href="https://certs.ine.com/7f70b201-28e1-48a6-bce2-d0e579ff2563#acc.jDpA1ckV" target="_blank" class="cert-link">Verify</a>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fas fa-user-ninja"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>eCPPTv3</h4>
-                                <p>eLearnSecurity Certified Professional Penetration Tester v3 – Advanced hands-on certification validating comprehensive penetration testing skills.</p>
-                                <span class="cert-provider">INE Security</span>
-                                <a href="https://certs.ine.com/3f4e8d11-68d2-451d-835a-2287b1c4d971#acc.auXR5fd4" target="_blank" class="cert-link">Verify</a>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fas fa-globe"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>eWPTv2</h4>
-                                <p>eLearnSecurity Web Application Penetration Tester v2 – Advanced certification focused on real-world web app exploitation and OWASP Top 10.</p>
-                                <span class="cert-provider">INE Security</span>
-                                <a href="https://certs.ine.com/075fc983-afa9-4bfb-b664-ef43dd5d10e2#acc.ViFOpqoW" target="_blank" class="cert-link">Verify</a>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fas fa-user-secret"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>CRTP</h4>
-                                <p>Certified Red Team Professional – Practical certification in Active Directory attack paths, Kerberoasting, DCSync, and post-exploitation.</p>
-                                <span class="cert-provider">Altered Security</span>
-                                <span class="cert-id">ID: ADLID13808</span>
-                                <a href="https://www.credential.net/bcc360c1-64d9-477c-aba4-25adda1a5f89#acc.1YLEis5O" target="_blank" class="cert-link">Verify</a>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fab fa-redhat"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>RHCSA</h4>
-                                <p>Red Hat Certified System Administrator – Validates core system administration skills on Red Hat Enterprise Linux (RHEL).</p>
-                                <span class="cert-provider">Red Hat</span>
-                                <span class="cert-id">ID: 250-075-249</span>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fab fa-redhat"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>RHCE</h4>
-                                <p>Red Hat Certified Engineer – Advanced certification focused on automation with Ansible and enterprise-level Linux system management.</p>
-                                <span class="cert-provider">Red Hat</span>
-                                <span class="cert-id">ID: 250-075-249</span>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fas fa-cloud"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>OCI Foundations</h4>
-                                <p>Oracle Cloud Infrastructure Foundations – Official certification covering core cloud concepts, compute, networking, and security in OCI.</p>
-                                <span class="cert-provider">Oracle</span>
-                                <a href="https://catalog-education.oracle.com/ords/certview/sharebadge?id=2E9AD628961054528010A8D538E941701AE88CABD42169A6F3D6B549B327554A" target="_blank" class="cert-link">Verify</a>
-                            </div>
-                        </div>
-
-                        <div class="cert-item">
-                            <div class="cert-icon">
-                                <i class="fab fa-python"></i>
-                            </div>
-                            <div class="cert-details">
-                                <h4>Python Essential 1</h4>
-                                <p>Python Institute Essential Level 1 – Validates core programming concepts and syntax in Python.</p>
-                                <span class="cert-provider">Python Institute</span>
-                                <a href="https://www.credly.com/badges/b5c85a29-45fe-461e-8e56-d45f0059dc92" target="_blank" class="cert-link">Verify</a>
-                            </div>
-                        </div>
+                <p>Verified credentials that reflect hands-on skills and cybersecurity discipline.</p>
+            </div>
+            <div class="cert-grid">
+                <article class="cert-card">
+                    <div class="cert-badge"><i class="fas fa-crosshairs"></i></div>
+                    <div>
+                        <h3>CRTO</h3>
+                        <p>Red team operations, C2, AD attacks, and stealthy access validation.</p>
+                        <a href="https://certs.zeropointsecurity.co.uk/ad853e66-f8cf-4ed9-a05f-7cfc392edd05" target="_blank">Verify</a>
                     </div>
-                </div>
-            </section>
-
-            <!-- Projects Section -->
-            <section id="projects" class="content-section">
-                <div class="section-header">
-                    <i class="fas fa-project-diagram"></i>
+                </article>
+                <article class="cert-card">
+                    <div class="cert-badge"><i class="fas fa-bug"></i></div>
+                    <div>
+                        <h3>eJPTv2</h3>
+                        <p>Junior penetration tester certification with practical exploitation skills.</p>
+                        <a href="https://certs.ine.com/7f70b201-28e1-48a6-bce2-d0e579ff2563#acc.jDpA1ckV" target="_blank">Verify</a>
+                    </div>
+                </article>
+                <article class="cert-card">
+                    <div class="cert-badge"><i class="fas fa-user-ninja"></i></div>
+                    <div>
+                        <h3>eCPPTv3</h3>
+                        <p>Advanced hands-on penetration testing certification for real-world attack workflows.</p>
+                        <a href="https://certs.ine.com/3f4e8d11-68d2-451d-835a-2287b1c4d971#acc.auXR5fd4" target="_blank">Verify</a>
+                    </div>
+                </article>
+                <article class="cert-card">
+                    <div class="cert-badge"><i class="fas fa-globe"></i></div>
+                    <div>
+                        <h3>eWPTv2</h3>
+                        <p>Web application penetration testing certification focused on OWASP and exploitation.</p>
+                        <a href="https://certs.ine.com/075fc983-afa9-4bfb-b664-ef43dd5d10e2#acc.ViFOpqoW" target="_blank">Verify</a>
+                    </div>
+                </article>
+            </div>
+        </section>
+        <section id="projects" class="section panel fade-up">
+            <div class="section-header">
+                <div>
+                    <p class="section-label">04</p>
                     <h2>Projects</h2>
                 </div>
-                <div class="section-content">
-                    <div class="projects-grid">
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3>Cybersecurity Portfolio</h3>
-                                <div class="project-tags">
-                                    <span class="tag">In Progress</span>
-                                </div>
-                            </div>
-                            <p>Personal portfolio with a hacker design, showcasing my skills and certifications in cybersecurity.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">HTML5</span>
-                                <span class="tech-tag">CSS3</span>
-                                <span class="tech-tag">JavaScript</span>
-                                <span class="tech-tag">GitHub Pages</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://github.com/Aydikoussay" target="_blank" class="btn-link"><i class="fab fa-github"></i> Code</a>
-                                <a href="https://aydikoussay.github.io" target="_blank" class="btn-link"><i class="fas fa-external-link-alt"></i> Demo</a>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3>SwapApp – Symfony Web App</h3>
-                                <div class="project-tags">
-                                    <span class="tag">Completed</span>
-                                </div>
-                            </div>
-                            <p>A full-featured web application built with Symfony, enabling users to exchange items or services. Implements user authentication, CRUD operations, form validation, and database integration.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Symfony</span>
-                                <span class="tech-tag">PHP</span>
-                                <span class="tech-tag">MySQL</span>
-                                <span class="tech-tag">Twig</span>
-                                <span class="tech-tag">Doctrine</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://github.com/Aydikoussay/swapapp-symfony" target="_blank" class="btn-link"><i class="fab fa-github"></i> Code</a>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3>H1ck2Win v1</h3>
-                                <div class="project-tags">
-                                    <span class="tag">Completed</span>
-                                </div>
-                            </div>
-                            <p>Web vulnerability scanner developed in Python to detect Cross-Site Scripting (XSS) and SQL Injection (SQLi) flaws. Features modular architecture, payload injection, and result reporting.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Python</span>
-                                <span class="tech-tag">Flask</span>
-                                <span class="tech-tag">Requests</span>
-                                <span class="tech-tag">BeautifulSoup</span>
-                                <span class="tech-tag">SQLite</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://github.com/Aydikoussay/Projet-python-Scanner-SQLI-XSS/blob/main/xss_sqli_scanner.zip" target="_blank" class="btn-link"><i class="fas fa-download"></i> Download</a>
-                                <a href="https://github.com/Aydikoussay/Projet-python-Scanner-SQLI-XSS/blob/main/Scanner_sqli_xss_tool.pdf" target="_blank" class="btn-link"><i class="fas fa-file-pdf"></i> Report</a>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3>Active Directory & Windows Server Security</h3>
-                                <div class="project-tags">
-                                    <span class="tag">Completed</span>
-                                </div>
-                            </div>
-                            <p>Deployment and hardening of a Windows Server 2019 Active Directory environment, including OU structuring, GPO policies, DHCP configuration, firewall rules, and system backup strategies.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Windows Server 2019</span>
-                                <span class="tech-tag">Active Directory</span>
-                                <span class="tech-tag">GPO</span>
-                                <span class="tech-tag">DHCP</span>
-                                <span class="tech-tag">PowerShell</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://github.com/Aydikoussay/Projet-Active-Directory-" target="_blank" class="btn-link"><i class="fab fa-github"></i> Code</a>
-                                <a href="https://github.com/Aydikoussay/Projet-Active-Directory-/blob/main/Projet_AD.pdf" target="_blank" class="btn-link"><i class="fas fa-file-pdf"></i> Report</a>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3>DarkFeed-CVE</h3>
-                                <div class="project-tags">
-                                    <span class="tag">Completed</span>
-                                </div>
-                            </div>
-                            <p>A cybersecurity tool designed to collect, analyze, and monitor CVE vulnerability intelligence from public sources. Helps security professionals track emerging threats and prioritize remediation.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Python</span>
-                                <span class="tech-tag">API Integration</span>
-                                <span class="tech-tag">Cyber Threat Intelligence</span>
-                                <span class="tech-tag">JSON</span>
-                                <span class="tech-tag">Automation</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://github.com/Aydikoussay/DarkFeed-CVE" target="_blank" class="btn-link"><i class="fab fa-github"></i> Code</a>
-                                <a href="https://github.com/Aydikoussay/DarkFeed-CVE" target="_blank" class="btn-link"><i class="fas fa-external-link-alt"></i> Demo</a>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3>Pentesting Lab</h3>
-                                <div class="project-tags">
-                                    <span class="tag">Planned</span>
-                                </div>
-                            </div>
-                            <p>Lab environment for pentesting practice with vulnerable virtual machines.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">VirtualBox</span>
-                                <span class="tech-tag">Kali Linux</span>
-                                <span class="tech-tag">Metasploit</span>
-                                <span class="tech-tag">Nmap</span>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3>Automation Scripts</h3>
-                                <div class="project-tags">
-                                    <span class="tag">Planned</span>
-                                </div>
-                            </div>
-                            <p>Collection of Python scripts for automating security and system administration tasks.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Python</span>
-                                <span class="tech-tag">Bash</span>
-                                <span class="tech-tag">Linux</span>
-                                <span class="tech-tag">Automation</span>
-                            </div>
-                        </div>
+                <p>Hands-on security projects, automation scripts, and analysis work designed for real attack and defense scenarios.</p>
+            </div>
+            <div class="projects-grid">
+                <article class="project-card">
+                    <div class="project-screenshot">Threat Intelligence</div>
+                    <div class="project-copy">
+                        <h3>DarkFeed-CVE</h3>
+                        <p>Automates CVE tracking and threat intelligence collection to prioritize remediation tasks.</p>
                     </div>
-                </div>
-            </section>
-
-            <!-- Writeups Section -->
-            <section id="writeups" class="content-section">
-                <div class="section-header">
-                    <i class="fas fa-pen-fancy"></i>
-                    <h2>Writeups</h2>
-                </div>
-                <div class="section-content">
-                    <div class="writeups-list">
-                        <article class="writeup-item">
-                            <div class="writeup-meta">
-                                <span class="writeup-category">Active Directory</span>
-                            </div>
-                            <h3>Vulnyx Controller</h3>
-                            <p>A detailed writeup of the Vulnyx Controller machine, covering exploitation techniques and privilege escalation methods.</p>
-                            <a href="https://medium.com/@koussayaydi2009/vulnyx-controller-writeup-29fff6012f9f" target="_blank" class="read-more">Read on Medium →</a>
-                        </article>
-
-                        <article class="writeup-item">
-                            <div class="writeup-meta">
-                                <span class="writeup-category">Linux</span>
-                            </div>
-                            <h3>Vulnyx Kyubi</h3>
-                            <p>A detailed writeup of the Vulnyx Kyubi machine, covering enumeration techniques, exploitation workflow, and privilege escalation steps in a realistic penetration testing scenario.</p>
-                            <a href="https://medium.com/@Atroxy/kyubi-vulnnyx-writeup-written-by-atrox-ab839f3b3e1c" target="_blank" class="read-more">Read on Medium →</a>
-                        </article>
-
-                        <article class="writeup-item">
-                            <div class="writeup-meta">
-                                <span class="writeup-category">Web Exploitation</span>
-                            </div>
-                            <h3>Vulnyx School</h3>
-                            <p>A detailed writeup of the Vulnyx School machine, covering LFI exploitation, Tomcat credential dumping, WAR file deployment, and privilege escalation via SeImpersonatePrivilege.</p>
-                            <a href="https://medium.com/@koussayaydi2009/vulnyx-school-writeup-6b72d0f92fbc" target="_blank" class="read-more">Read on Medium →</a>
-                        </article>
-
-                        <article class="writeup-item">
-                            <div class="writeup-meta">
-                                <span class="writeup-category">Medium Profile</span>
-                            </div>
-                            <h3>More Writeups on Medium</h3>
-                            <p>All my detailed writeups and cybersecurity articles are published on Medium. Follow my profile to stay updated with the latest content on penetration testing, CTF challenges, and security research.</p>
-                            <a href="https://medium.com/@koussayaydi2009" target="_blank" class="read-more">Visit Medium Profile →</a>
-                        </article>
+                    <div class="project-meta">Python · APIs · Threat Intelligence</div>
+                    <a href="https://github.com/Aydikoussay/DarkFeed-CVE" target="_blank" class="btn btn-secondary"><i class="fab fa-github"></i> View Code</a>
+                </article>
+                <article class="project-card">
+                    <div class="project-screenshot">Web Scanner</div>
+                    <div class="project-copy">
+                        <h3>H1ck2Win Scanner</h3>
+                        <p>Python-based scanner designed to detect XSS and SQL injection vulnerabilities in web applications.</p>
                     </div>
-                </div>
-            </section>
-
-            <!-- Contact Section -->
-            <section id="contact" class="content-section">
-                <div class="section-header">
-                    <i class="fas fa-envelope"></i>
-                    <h2>Let's Connect</h2>
-                </div>
-                <div class="section-content">
-                    <p>I'm always interested in discussing cybersecurity, collaborating on projects, or exploring new opportunities in the field. I'm available for opportunities in penetration testing, red teaming, and security research.</p>
-                    
-                    <div class="contact-info">
-                        <div class="contact-item">
-                            <h3>Email</h3>
-                            <a href="mailto:koussayaydi2009@gmail.com">koussayaydi2009@gmail.com</a>
-                        </div>
-                        <div class="contact-item">
-                            <h3>LinkedIn</h3>
-                            <a href="https://www.linkedin.com/in/koussay-aydi-61a00b260/" target="_blank">linkedin.com/in/koussay-aydi</a>
-                        </div>
-                        <div class="contact-item">
-                            <h3>GitHub</h3>
-                            <a href="https://github.com/Aydikoussay" target="_blank">github.com/Aydikoussay</a>
-                        </div>
-                        <div class="contact-item">
-                            <h3>Medium</h3>
-                            <a href="https://medium.com/@koussayaydi2009" target="_blank">medium.com/@koussayaydi2009</a>
-                        </div>
+                    <div class="project-meta">Python · Web Pentesting · Automation</div>
+                    <div class="project-links">
+                        <a href="https://github.com/Aydikoussay/Projet-python-Scanner-SQLI-XSS/blob/main/xss_sqli_scanner.zip" target="_blank" class="btn btn-secondary"><i class="fas fa-download"></i> Download</a>
+                        <a href="https://github.com/Aydikoussay/Projet-python-Scanner-SQLI-XSS/blob/main/Scanner_sqli_xss_tool.pdf" target="_blank" class="btn btn-secondary"><i class="fas fa-file-pdf"></i> Report</a>
                     </div>
-
+                </article>
+                <article class="project-card">
+                    <div class="project-screenshot">AD Lab</div>
+                    <div class="project-copy">
+                        <h3>AD Hardening Lab</h3>
+                        <p>Active Directory lab environment with hardening, policy controls, and incident detection validation.</p>
+                    </div>
+                    <div class="project-meta">Active Directory · PowerShell · Detection</div>
+                    <a href="https://github.com/Aydikoussay/Projet-Active-Directory-" target="_blank" class="btn btn-secondary"><i class="fab fa-github"></i> View Code</a>
+                </article>
+            </div>
+        </section>
+        <section id="experience" class="section panel fade-up">
+            <div class="section-header">
+                <div>
+                    <p class="section-label">05</p>
+                    <h2>Experience</h2>
+                </div>
+                <p>Training and hands-on exposure that shaped practical security skills and incident readiness.</p>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <span class="timeline-date">2025</span>
+                    <h3>Cybersecurity Analyst Internship</h3>
+                    <p>Supported incident detection, triage, and security rule tuning in a SOC environment.</p>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-date">2024</span>
+                    <h3>Penetration Testing Labs</h3>
+                    <p>Completed practical CTF and lab challenges focused on Active Directory, web, and host exploitation.</p>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-date">2023</span>
+                    <h3>Detection Engineering</h3>
+                    <p>Built SIEM rules, log pipelines, and attack simulation playbooks for advanced detection coverage.</p>
+                </div>
+            </div>
+        </section>
+        <section id="contact" class="section panel fade-up">
+            <div class="section-header">
+                <div>
+                    <p class="section-label">06</p>
+                    <h2>Contact</h2>
+                </div>
+                <p>Reach out for freelance security work, internships, or collaborative threat research.</p>
+            </div>
+            <div class="contact-grid">
+                <div class="contact-card contact-focus">
+                    <h3>Say hello</h3>
+                    <p>I'm available for security analyst, SOC analyst, and penetration testing roles. Let's talk about the next opportunity.</p>
+                    <a class="contact-link" href="mailto:koussayaydi2009@gmail.com"><i class="fas fa-envelope"></i> koussayaydi2009@gmail.com</a>
+                </div>
+                <div class="contact-card contact-links">
+                    <h3>Professional links</h3>
                     <div class="social-links">
-                        <a href="https://github.com/Aydikoussay" class="social-btn" title="GitHub" target="_blank">
-                            <i class="fab fa-github"></i>
-                        </a>
-                        <a href="https://www.linkedin.com/in/koussay-aydi-61a00b260/" class="social-btn" title="LinkedIn" target="_blank">
-                            <i class="fab fa-linkedin"></i>
-                        </a>
-                        <a href="https://medium.com/@koussayaydi2009" class="social-btn" title="Medium" target="_blank">
-                            <i class="fab fa-medium"></i>
-                        </a>
-                        <a href="mailto:koussayaydi2009@gmail.com" class="social-btn" title="Email">
-                            <i class="fas fa-envelope"></i>
-                        </a>
+                        <a href="https://github.com/Aydikoussay" target="_blank" class="social-btn" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                        <a href="https://www.linkedin.com/in/koussay-aydi-61a00b260/" target="_blank" class="social-btn" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://medium.com/@koussayaydi2009" target="_blank" class="social-btn" aria-label="Medium"><i class="fab fa-medium"></i></a>
+                        <a href="mailto:koussayaydi2009@gmail.com" class="social-btn" aria-label="Email"><i class="fas fa-envelope"></i></a>
                     </div>
                 </div>
-            </section>
-
-            <!-- Footer -->
-            <footer class="footer">
-                <p>&copy; 2025 Koussay Aydi. All rights reserved.</p>
-                <p>Status: Available for opportunities in Penetration Testing, Red Teaming, and Security Research</p>
-            </footer>
-        </main>
-    </div>
-
+            </div>
+        </section>
+    </main>
     <script src="script.js"></script>
 </body>
 </html>
