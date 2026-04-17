@@ -114,6 +114,41 @@ img {
     border-bottom-color: rgba(255, 0, 51, 0.15);
 }
 
+.brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.brand-mark {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-soft);
+    background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    box-shadow: 0 4px 12px rgba(255, 0, 51, 0.3);
+}
+
+.brand-label {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.brand-subtitle {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 500;
+}
+
 .main-nav a {
     position: relative;
     color: var(--muted);
