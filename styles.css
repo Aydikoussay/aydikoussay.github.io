@@ -360,6 +360,13 @@ img {
     color: #ff7b94;
 }
 
+.cert-id {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 .terminal-card {
     width: min(100%, 480px);
     padding: 28px;
