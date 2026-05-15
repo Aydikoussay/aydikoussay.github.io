@@ -48,21 +48,26 @@
             <h2>Enumeration</h2>
             <h3>SMB Share Access</h3>
             <p>Initial reconnaissance shows anonymous access allowed on certain shares. Exploring these reveals a <code>users.txt</code> file, which is a key piece of information for user-based attacks.</p>
-            <pre><code>smbclient -L //10.10.11.231/ -N
-smbclient //10.10.11.231/Public -N
-get users.txt</code></pre>
+            <pre><code>smbclient -L //10.10.11.231/ -N</code></pre>
+            <p>Inside the <code>Public</code> share, we find a list of potential domain users. This list is essential for performing Kerberos-based attacks without needing prior passwords.</p>
 
             <h2>Initial Foothold</h2>
             <h3>AS-REP Roasting</h3>
             <p>With the list of usernames, we can check for accounts that do not require Kerberos pre-authentication. This allows us to request an authentication ticket and attempt to crack it offline.</p>
             <pre><code>impacket-GetNPUsers principal.htb/ -usersfile users.txt -format hashcat -outputfile hashes.asrep</code></pre>
-            <p>Using <strong>hashcat</strong> with mode 18200, we successfully crack the hash of the user <code>m.rossi</code>, giving us our first set of valid credentials.</p>
+            <p>The tool identifies that the user <code>m.rossi</code> has pre-authentication disabled. Using <strong>hashcat</strong> with mode 18200, we successfully crack the hash to reveal the password.</p>
+            
+            <h3>WinRM Access</h3>
+            <p>With valid credentials for <code>m.rossi</code>, we authenticate via WinRM to establish our initial foothold on the system.</p>
+            <pre><code>evil-winrm -i 10.10.11.231 -u m.rossi -p 'password123'</code></pre>
 
             <h2>Privilege Escalation</h2>
-            <h3>BloodHound & Path to Admin</h3>
-            <p>After gaining a shell via WinRM, BloodHound data reveals that our current user has specific permissions over other objects or service accounts. By exploiting these relations, we can move laterally or escalate directly to a high-privileged state.</p>
-            <pre><code># Enumerating with BloodHound-python
-python3 bloodhound.py -u 'm.rossi' -p 'password123' -d principal.htb -ns 10.10.11.231 -c All</code></pre>
+            <h3>Active Directory Enumeration</h3>
+            <p>Running BloodHound-python from our attack machine helps visualize the attack path within the domain. We identify that our current user has <code>GenericWrite</code> or <code>WriteProperty</code> permissions over other sensitive objects.</p>
+            <pre><code>python3 bloodhound.py -u 'm.rossi' -p '...' -d principal.htb -c All</code></pre>
+            
+            <h3>Path to Domain Admin</h3>
+            <p>The enumeration reveals that we can exploit the relationship between service accounts or GMSA (Group Managed Service Accounts). By leveraging these misconfigurations, we can impersonate a high-privileged user and eventually gain <strong>Domain Admin</strong> privileges.</p>
 
             <div class="hero-meta" style="margin-top: 40px;">
                 <span>Attack Chain:</span>

