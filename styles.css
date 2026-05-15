@@ -1,4 +1,4 @@
-﻿/* Red Team Portfolio Styles */
+﻿﻿/* Red Team Portfolio Styles */
 :root {
     color-scheme: dark;
     --bg: #04050b;
@@ -474,7 +474,37 @@ img {
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
     border-color: rgba(255, 0, 51, 0.3);
 }
-    box-shadow: var(--shadow);
+
+/* Writeup Page Specifics */
+.writeup-content {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.writeup-content h2 { margin: 48px 0 24px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.writeup-content h3 { margin: 32px 0 16px; color: var(--text); }
+.writeup-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.writeup-content th, .writeup-content td {
+    padding: 14px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+.writeup-content th { background: var(--accent-soft); color: var(--accent); }
+.writeup-content pre {
+    background: #0d1117;
+    padding: 20px;
+    border-radius: 14px;
+    margin: 20px 0;
+    border: 1px solid var(--border);
+    overflow-x: auto;
 }
 
 .profile-image {

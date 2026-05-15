@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principal Writeup | Koussay Aydi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">← Back to Portfolio</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Windows Medium</span>
+            <h1>Principal Writeup</h1>
+            <p><strong>Author:</strong> atrox | <strong>Tags:</strong> Active Directory, Kerberos, AS-REP Roasting, SMB Enumeration</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Overview</h2>
+            <p>Principal is a medium-difficulty Windows machine that focuses on Active Directory exploitation. The attack path involves enumerating SMB shares to find a list of users, performing AS-REP Roasting to gain an initial foothold, and leveraging misconfigurations within the domain to escalate privileges.</p>
+
+            <h2>Reconnaissance</h2>
+            <h3>Nmap Scan</h3>
+            <pre><code>nmap -sC -sV -oA nmap/principal 10.10.11.231</code></pre>
+            <table>
+                <thead><tr><th>Port</th><th>Service</th></tr></thead>
+                <tbody>
+                    <tr><td>53</td><td>DNS</td></tr>
+                    <tr><td>88</td><td>Kerberos</td></tr>
+                    <tr><td>135</td><td>MSRPC</td></tr>
+                    <tr><td>389</td><td>LDAP</td></tr>
+                    <tr><td>445</td><td>SMB</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Enumeration</h2>
+            <h3>SMB Share Access</h3>
+            <p>Initial reconnaissance shows anonymous access allowed on certain shares. Exploring these reveals a <code>users.txt</code> file, which is a key piece of information for user-based attacks.</p>
+            <pre><code>smbclient -L //10.10.11.231/ -N
+smbclient //10.10.11.231/Public -N
+get users.txt</code></pre>
+
+            <h2>Initial Foothold</h2>
+            <h3>AS-REP Roasting</h3>
+            <p>With the list of usernames, we can check for accounts that do not require Kerberos pre-authentication. This allows us to request an authentication ticket and attempt to crack it offline.</p>
+            <pre><code>impacket-GetNPUsers principal.htb/ -usersfile users.txt -format hashcat -outputfile hashes.asrep</code></pre>
+            <p>Using <strong>hashcat</strong> with mode 18200, we successfully crack the hash of the user <code>m.rossi</code>, giving us our first set of valid credentials.</p>
+
+            <h2>Privilege Escalation</h2>
+            <h3>BloodHound & Path to Admin</h3>
+            <p>After gaining a shell via WinRM, BloodHound data reveals that our current user has specific permissions over other objects or service accounts. By exploiting these relations, we can move laterally or escalate directly to a high-privileged state.</p>
+            <pre><code># Enumerating with BloodHound-python
+python3 bloodhound.py -u 'm.rossi' -p 'password123' -d principal.htb -ns 10.10.11.231 -c All</code></pre>
+
+            <div class="hero-meta" style="margin-top: 40px;">
+                <span>Attack Chain:</span>
+                <code>SMB (users.txt) → AS-REP Roasting → Hashcat → WinRM Foothold → AD Enumeration → Domain Admin</code>
+            </div>
+            
+            <div style="margin-top: 50px;">
+                <a href="index.html" class="btn btn-primary">Return Home</a>
+            </div>
+        </article>
+    </main>
+</body>
+</html>

