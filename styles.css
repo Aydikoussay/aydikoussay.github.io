@@ -1,17 +1,17 @@
-﻿/* Red Team Portfolio Styles */
+﻿/* Offensive Security Dashboard Theme */
 :root {
     color-scheme: dark;
-    --bg: #04050b;
-    --surface: rgba(10, 12, 24, 0.95);
+    --bg: #030408;
+    --surface: rgba(8, 10, 18, 0.85);
     --surface-soft: rgba(20, 24, 40, 0.9);
-    --panel: rgba(8, 10, 20, 0.96);
-    --border: rgba(255, 0, 51, 0.18);
+    --panel: rgba(6, 8, 15, 0.98);
+    --border: rgba(255, 0, 51, 0.22);
     --text: #f1f4fb;
     --muted: #8a99b8;
-    --accent: #ff0033;
-    --accent-soft: rgba(255, 0, 51, 0.16);
+    --accent: #ff1a4a;
+    --accent-soft: rgba(255, 0, 51, 0.1);
     --accent-alt: #d10028;
-    --shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+    --shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.25);
     --radius: 24px;
     --radius-soft: 16px;
@@ -54,18 +54,28 @@ body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image: 
-        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
-        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px);
-    background-size: 60px 60px;
-    opacity: 0.08;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.15;
     pointer-events: none;
-    animation: grid-move 20s linear infinite;
 }
 
-@keyframes grid-move {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(60px, 60px); }
+.scanline {
+    width: 100%;
+    height: 100px;
+    z-index: 99;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(255, 0, 51, 0.02) 50%, rgba(0, 0, 0, 0) 100%);
+    opacity: 0.1;
+    position: fixed;
+    bottom: 100%;
+    left: 0;
+    pointer-events: none;
+    animation: scanline 8s linear infinite;
+}
+
+@keyframes scanline {
+    0% { bottom: 100%; }
+    100% { bottom: -100px; }
 }
 
 body::after {
@@ -481,6 +491,54 @@ img {
     object-fit: cover;
     display: block;
     transition: transform var(--transition-fast);
+}
+
+/* Writeups Section */
+.writeups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.writeup-card {
+    position: relative;
+    padding: var(--spacing-xl);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-soft);
+    transition: all var(--transition);
+    overflow: hidden;
+}
+
+.writeup-card:hover {
+    background: rgba(255, 0, 51, 0.03);
+    border-color: rgba(255, 0, 51, 0.4);
+    transform: translateY(-5px);
+    box-shadow: 0 0 30px rgba(255, 0, 51, 0.1);
+}
+
+.card-status {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    margin-bottom: 12px;
+    letter-spacing: 0.1em;
+}
+
+.card-tags {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.card-tags span {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    color: var(--muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .profile-frame:hover .profile-image {
