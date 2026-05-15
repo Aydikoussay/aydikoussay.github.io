@@ -29,21 +29,22 @@
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
 
             <h2>Overview</h2>
-            <p>Principal is a medium-difficulty Windows machine that focuses on Active Directory exploitation. The attack path involves enumerating SMB shares to find a list of users, performing AS-REP Roasting to gain an initial foothold, and leveraging misconfigurations within the domain to escalate privileges.</p>
+            <p>Principal is a Windows Active Directory machine focusing on Kerberos exploitation. The path involves discovering user lists via SMB, performing AS-REP Roasting to obtain credentials, and exploiting domain object permissions to reach Domain Admin.</p>
 
             <h2>Reconnaissance</h2>
-            <h3>Nmap Scan</h3>
+            <h3>Nmap</h3>
             <pre><code>nmap -sC -sV -oA nmap/principal 10.10.11.231</code></pre>
             <table>
                 <thead><tr><th>Port</th><th>Service</th></tr></thead>
                 <tbody>
                     <tr><td>53</td><td>DNS</td></tr>
                     <tr><td>88</td><td>Kerberos</td></tr>
-                    <tr><td>135</td><td>MSRPC</td></tr>
-                    <tr><td>389</td><td>LDAP</td></tr>
-                    <tr><td>445</td><td>SMB</td></tr>
+                    <tr><td>135, 445</td><td>RPC / SMB</td></tr>
+                    <tr><td>389, 3268</td><td>LDAP / Global Catalog</td></tr>
+                    <tr><td>5985</td><td>WinRM</td></tr>
                 </tbody>
             </table>
+            <p>Target Domain: <strong>principal.htb</strong></p>
 
             <h2>Enumeration</h2>
             <h3>SMB Share Access</h3>
@@ -53,21 +54,31 @@
 
             <h2>Initial Foothold</h2>
             <h3>AS-REP Roasting</h3>
-            <p>With the list of usernames, we can check for accounts that do not require Kerberos pre-authentication. This allows us to request an authentication ticket and attempt to crack it offline.</p>
+            <p>We check for accounts with the <code>DONT_REQ_PREAUTH</code> flag set. This allows us to retrieve a crackable hash without a password:</p>
             <pre><code>impacket-GetNPUsers principal.htb/ -usersfile users.txt -format hashcat -outputfile hashes.asrep</code></pre>
-            <p>The tool identifies that the user <code>m.rossi</code> has pre-authentication disabled. Using <strong>hashcat</strong> with mode 18200, we successfully crack the hash to reveal the password.</p>
+            <p>The user <code>m.rossi</code> is vulnerable. Cracking the hash reveals the password, granting us WinRM access.</p>
             
-            <h3>WinRM Access</h3>
-            <p>With valid credentials for <code>m.rossi</code>, we authenticate via WinRM to establish our initial foothold on the system.</p>
-            <pre><code>evil-winrm -i 10.10.11.231 -u m.rossi -p 'password123'</code></pre>
+            <h3>Evil-WinRM Foothold</h3>
+            <pre><code>evil-winrm -i 10.10.11.231 -u m.rossi -p '[REDACTED]'</code></pre>
 
             <h2>Privilege Escalation</h2>
-            <h3>Active Directory Enumeration</h3>
-            <p>Running BloodHound-python from our attack machine helps visualize the attack path within the domain. We identify that our current user has <code>GenericWrite</code> or <code>WriteProperty</code> permissions over other sensitive objects.</p>
-            <pre><code>python3 bloodhound.py -u 'm.rossi' -p '...' -d principal.htb -c All</code></pre>
-            
-            <h3>Path to Domain Admin</h3>
-            <p>The enumeration reveals that we can exploit the relationship between service accounts or GMSA (Group Managed Service Accounts). By leveraging these misconfigurations, we can impersonate a high-privileged user and eventually gain <strong>Domain Admin</strong> privileges.</p>
+            <h3>BloodHound Analysis</h3>
+            <p>Using <code>bloodhound-python</code>, we map out the domain relationships. We identify that <code>m.rossi</code> has specific write permissions over sensitive objects.</p>
+
+            <h3>GMSA Exploitation</h3>
+            <p>The escalation path involves Group Managed Service Accounts (GMSA). By exploiting the permissions mapped in BloodHound, we can retrieve the GMSA password and use it to impersonate a domain administrator.</p>
+
+            <h2>Attack Chain Summary</h2>
+            <pre><code>SMB Enumeration (users.txt) → AS-REP Roasting → Hashcat → WinRM Shell → BloodHound → GMSA Exploitation → Domain Admin</code></pre>
+
+            <h2>Tools Used</h2>
+            <ul>
+                <li><code>nmap</code>, <code>smbclient</code></li>
+                <li><code>impacket (GetNPUsers)</code></li>
+                <li><code>hashcat</code> (Mode 18200)</li>
+                <li><code>BloodHound</code></li>
+                <li><code>evil-winrm</code></li>
+            </ul>
 
             <div class="hero-meta" style="margin-top: 40px;">
                 <span>Attack Chain:</span>
