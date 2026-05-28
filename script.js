@@ -7,7 +7,7 @@ const TYPE_LINES = [
     'whoami',
     'red-team-operator',
     'nmap -A target.local',
-    'privilege escalation successful',
+    'Projet-python-Scanner-SQLI-XSS',
     'git clone https://github.com/Aydikoussay/Tech-vision'
 ];
 let lineIndex = 0;
