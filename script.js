@@ -1,4 +1,4 @@
-﻿const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+﻿﻿const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileNav = document.getElementById('mobileNav');
 const scrollProgress = document.getElementById('scrollProgress');
 const typeText = document.getElementById('typeText');
@@ -7,7 +7,8 @@ const TYPE_LINES = [
     'whoami',
     'red-team-operator',
     'nmap -A target.local',
-    'privilege escalation successful'
+    'privilege escalation successful',
+    'git clone https://github.com/Aydikoussay/Tech-vision'
 ];
 let lineIndex = 0;
 let charIndex = 0;
