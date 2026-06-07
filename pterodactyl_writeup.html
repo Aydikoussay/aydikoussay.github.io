@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pterodactyl Writeup | Koussay Aydi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <canvas id="particles-canvas"></canvas>
+    <div class="scroll-progress" id="scrollProgress"></div>
     <header class="topbar">
         <div class="brand">
             <div class="brand-mark">KA</div>
@@ -17,10 +22,15 @@
             </div>
         </div>
         <nav class="main-nav">
-            <a href="index.html">← Back to Portfolio</a>
+            <a href="index.html">Back to Portfolio</a>
         </nav>
+        <div class="topbar-actions">
+            <button id="mobileMenuBtn" class="icon-btn mobile-menu-btn" aria-label="Open mobile menu"><i class="fas fa-bars"></i></button>
+        </div>
     </header>
-
+    <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+        <a href="index.html">Back to Portfolio</a>
+    </div>
     <main class="page-shell">
         <article class="panel writeup-content">
             <span class="eyebrow">Hack The Box — Linux Medium</span>
@@ -209,10 +219,11 @@ gdbus call --system \
                 <code>nmap</code> <code>gobuster</code> <code>PHP-PEAR</code> <code>curl</code> <code>python3</code> <code>gdbus</code> <code>udisksctl</code>
             </div>
             
-            <div style="margin-top: 50px;">
-                <a href="index.html" class="btn btn-primary">Return Home</a>
+            <div style="margin-top: 50px; text-align: center;">
+                <a href="index.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Return Home</a>
             </div>
         </article>
     </main>
+    <script src="script.js"></script>
 </body>
 </html>
