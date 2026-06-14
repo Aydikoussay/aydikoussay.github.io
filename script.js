@@ -1,4 +1,4 @@
-﻿const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+﻿﻿const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileNav = document.getElementById('mobileNav');
 const scrollProgress = document.getElementById('scrollProgress');
 
@@ -167,26 +167,28 @@ document.querySelectorAll('.skills-categories').forEach(el => {
 // --- Custom Cursor Dot ---
 const cursorRing = document.getElementById('cursorRing');
 
-document.addEventListener('mousemove', (e) => {
-    cursorRing.style.left = e.clientX + 'px';
-    cursorRing.style.top = e.clientY + 'px';
-});
+if (cursorRing) {
+    document.addEventListener('mousemove', (e) => {
+        cursorRing.style.left = e.clientX + 'px';
+        cursorRing.style.top = e.clientY + 'px';
+    });
 
-document.addEventListener('mouseenter', () => cursorRing.style.opacity = '1');
-document.addEventListener('mouseleave', () => cursorRing.style.opacity = '0');
+    document.addEventListener('mouseenter', () => cursorRing.style.opacity = '1');
+    document.addEventListener('mouseleave', () => cursorRing.style.opacity = '0');
 
-// Hide ring on touch devices
-if ('ontouchstart' in window) {
-    cursorRing.style.display = 'none';
-} else {
-    document.body.classList.add('has-custom-cursor');
+    // Hide ring on touch devices
+    if ('ontouchstart' in window) {
+        cursorRing.style.display = 'none';
+    } else {
+        document.body.classList.add('has-custom-cursor');
+    }
+
+    // Hover effect for interactive elements
+    document.querySelectorAll('a, button, .btn, .project-card, .skill-category, .exp-item, .social-btn, .highlight-card, .contact-detail-item, input, textarea, label').forEach(el => {
+        el.addEventListener('mouseenter', () => cursorRing.classList.add('cursor-ring--hover'));
+        el.addEventListener('mouseleave', () => cursorRing.classList.remove('cursor-ring--hover'));
+    });
 }
-
-// Hover effect for interactive elements
-document.querySelectorAll('a, button, .btn, .project-card, .skill-category, .exp-item, .social-btn, .highlight-card, .contact-detail-item, input, textarea, label').forEach(el => {
-    el.addEventListener('mouseenter', () => cursorRing.classList.add('cursor-ring--hover'));
-    el.addEventListener('mouseleave', () => cursorRing.classList.remove('cursor-ring--hover'));
-});
 
 // --- Events ---
 window.addEventListener('scroll', updateScrollProgress);
