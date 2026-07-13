@@ -222,7 +222,8 @@ img {
 }
 
 .main-nav a:hover,
-.main-nav a:focus-visible {
+.main-nav a:focus-visible,
+.main-nav a.active {
     color: var(--accent);
     background: var(--accent-soft);
 }

